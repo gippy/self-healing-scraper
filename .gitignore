@@ -9,3 +9,4 @@ work/
 *.pem
 # Personal notes for the hackathon (account emails, promo details); never in the public repo.
 HACKATHON_INFO.md
+SUBMISSION.md
