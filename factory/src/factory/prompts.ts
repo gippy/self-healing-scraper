@@ -29,6 +29,11 @@ item's title, a price (amount and currency), stock where the page shows it. Asse
 for any output, or for an empty list, are not acceptable. Look at the existing tests in \`tests/\` for the
 style and the imports.
 
+Take every expected value from the listing element itself: its attributes and its children. Never from
+other parts of the page such as tickers, banners, "recently sold" strips or totals: the same title can
+appear there with an older or newer price, and a test built on it would demand wrong data. Check each
+expected value by finding it inside that listing's own markup before you write it down.
+
 Then run \`node --test ${testPath}\` and confirm it fails, and that it fails the way the event did.
 
 Answer with the test path, the failure you saw, and the assertions you made.
