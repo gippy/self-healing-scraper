@@ -166,12 +166,22 @@ which isn't in its public API reference either; if Sentry refuses either one, th
 
 ### Dashboard
 
-One card per run, newest on top, marked **New scraper** or **Heal** with the scraper's name. A row of stage
-chips, Gemini's reading of what broke, then a timeline with each step's summary, how long it took, and its
-details: the decision probabilities as bars (with the 0.6 and 0.8 thresholds marked), the guard's verdict and
-findings, the priority, the pause, the route. Whatever the factory puts in `event.data` is shown by shape:
-`diff`/`patch` as a coloured diff, `blocking` and `notes` as lists, decision answers and probabilities as bars,
-`prUrl` as a button, `error` in red, long text in collapsible blocks. Progress lines a running step emits
-update its row instead of adding rows. The side panel lists the registered scrapers with their URL and
-whether they run, are paused (and for which issue) or don't answer. Add `?theme=dark` (or `?theme=light`) to
-force a theme; otherwise it follows the system.
+A mission-control screen: monospace, hard corners, one card per run, newest on top, marked **New scraper** or
+**Heal** with the scraper's name, the run time and the model cost so far. Each card draws the run as a
+connected pipeline: a heal has a **Monitor** lane (received → evidence → prompt guard → Gemini triage →
+priority → pause scraper → route) and a **Factory** lane (worktree → failing test → fix → adversarial review
+→ Gemini gate → pull request → merged → deploy → resume scraper → resolved); a create run has one lane
+(investigate → parser + tests → verify live → Gemini gate → pull request → merged → deploy → registered).
+Each node lights up as its step starts (animated) and finishes; steps the run skipped are dashed. A stop
+(`needs_human` or `failed`) is drawn as a branch off the node where the run stopped. The running step's
+agent progress lines stream in a live log under the diagram.
+
+Click a node to see its details below the diagram (click again to follow the live step): the decision
+probabilities as bars (with the 0.6 and 0.8 thresholds marked), the guard's verdict and findings, the
+failing test, the diff, the review findings, the PR link, the cost. Whatever the factory puts in
+`event.data` is shown by shape: `diff`/`patch` as a coloured diff, `blocking` and `notes` as lists, decision
+answers and probabilities as bars, `prUrl` as a button, `error` in red, long text in collapsible blocks.
+
+The side panel lists the registered scrapers with their URL and state: **Running** (breaker closed),
+**Paused** (breaker open, and for which issue), **Healing** (paused while the factory works on the issue)
+or **Down**. The ◐ button switches light and dark; `?theme=dark` or `?theme=light` forces one.

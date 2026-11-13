@@ -12,15 +12,27 @@ import type { EventStore } from './store.ts';
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-// What the factory itself did to each scraper, from the pause and resume events it emitted.
+// What the factory itself did to each scraper, from the pause and resume events it emitted: paused for an
+// issue, healing while the factory works on that issue, running again once resumed.
+const HEALING_STAGES = new Set(['worktree', 'reproduce', 'fix', 'review', 'gate', 'pr_opened', 'merged', 'deploy', 'deployed']);
+
 export function pauseHints(events: PipelineEvent[]): Map<string, PauseHint> {
     const hints = new Map<string, PauseHint>();
+    const pausedBy = new Map<string, string>();
     for (const event of events) {
-        if (event.status !== 'done' || (event.stage !== 'source_paused' && event.stage !== 'source_resumed')) continue;
         const data = isRecord(event.data) ? event.data : {};
         const name = event.scraper ?? (typeof data.scraper === 'string' ? data.scraper : typeof data.source === 'string' ? data.source : undefined);
+        const forIssue = pausedBy.get(event.issueId);
+        if (forIssue && hints.get(forIssue)?.paused) {
+            const hint = hints.get(forIssue)!;
+            if (HEALING_STAGES.has(event.stage)) hint.healing = event.status !== 'failed';
+            if (event.stage === 'needs_human' || event.stage === 'failed') hint.healing = false;
+        }
+        if (event.status !== 'done' || (event.stage !== 'source_paused' && event.stage !== 'source_resumed')) continue;
         if (!name) continue;
-        hints.set(name, { paused: event.stage === 'source_paused', issue: event.shortId, at: event.at });
+        hints.set(name, { paused: event.stage === 'source_paused', healing: false, issue: event.shortId, at: event.at });
+        if (event.stage === 'source_paused') pausedBy.set(event.issueId, name);
+        else pausedBy.delete(event.issueId);
     }
     return hints;
 }
@@ -51,7 +63,8 @@ export function dashboardRoutes(store: EventStore): Hono {
             const unsubscribe = store.subscribe((event: PipelineEvent) => {
                 void write('pipeline', event);
                 void card(event.issueId, false);
-                if ((event.stage === 'source_paused' || event.stage === 'source_resumed') && event.status !== 'started') {
+                const breaker = (event.stage === 'source_paused' || event.stage === 'source_resumed') && event.status !== 'started';
+                if (breaker || event.stage === 'worktree' || event.stage === 'needs_human' || event.stage === 'failed') {
                     void scrapersHtml(0).then((html) => write('scrapers', { html })).catch(() => undefined);
                 }
             });
