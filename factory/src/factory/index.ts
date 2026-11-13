@@ -259,13 +259,13 @@ async function fixIssue(input: FactoryInput, emit: Emit, deps: FactoryDeps): Pro
         lastReview = await review();
     }
 
-    // 5. Jev's gate. Code turns its probabilities, the limits and the checks into a decision.
-    step('gate', 'started', 'Asking Jev whether this is safe to merge without a human');
+    // 5. Gemini's gate. Code turns its probabilities, the limits and the checks into a decision.
+    step('gate', 'started', 'Asking Gemini whether this is safe to merge without a human');
     const answers: GateAnswers | undefined = config.geminiApiKey
         ? await deps.askGate(config.geminiApiKey, getGateState(input, diff, testSource, lastReview))
         : undefined;
     const decision = decide(answers, limits, true);
-    step('gate', 'done', decision.merge ? 'Jev: safe to merge' : `A human should look: ${decision.reasons.join('; ')}`, {
+    step('gate', 'done', decision.merge ? 'Gemini: safe to merge' : `A human should look: ${decision.reasons.join('; ')}`, {
         answers,
         decision,
         costUsd,
@@ -342,7 +342,7 @@ function getPullRequestBody(
 **Adversarial review:** ${review ? (review.blocking.length ? `${review.blocking.length} blocking finding(s) left` : 'could not break it') : 'did not finish'}
 ${review?.notes.length ? review.notes.map((note) => `- ${note}`).join('\n') : ''}
 
-**Jev's gate:** low risk ${percent(answers?.lowRisk)} · fixes the cause ${percent(answers?.rootCause)} · review clear ${percent(answers?.reviewClear)}
+**Gemini's gate:** low risk ${percent(answers?.lowRisk)} · fixes the cause ${percent(answers?.rootCause)} · review clear ${percent(answers?.reviewClear)}
 ${reasons.length ? `\nNot auto-merged: ${reasons.join('; ')}` : '\nAuto-merged: every threshold met.'}
 
 Model cost: $${costUsd.toFixed(2)}
