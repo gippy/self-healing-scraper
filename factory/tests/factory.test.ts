@@ -41,6 +41,11 @@ test('the tool guard keeps writes and commands inside the policy', async () => {
     assert.equal((await ask('Write', { file_path: '/work/repo/src/parsers/../../package.json' })).behavior, 'deny');
     assert.equal((await ask('Read', { file_path: '/Users/someone/.ssh/id_rsa' })).behavior, 'deny');
     assert.equal((await ask('Read', { file_path: '/work/repo/src/parsers/shop.ts' })).behavior, 'allow');
+    assert.equal((await ask('Glob', { pattern: '../../auction-house/**/*.ts' })).behavior, 'deny');
+    assert.equal((await ask('Glob', { pattern: '/Users/someone/**' })).behavior, 'deny');
+    assert.equal((await ask('Grep', { pattern: 'tile', glob: '../**' })).behavior, 'deny');
+    assert.equal((await ask('Glob', { pattern: 'src/**/*.ts' })).behavior, 'allow');
+    assert.equal((await ask('Grep', { pattern: 'data-bid', glob: '*.html' })).behavior, 'allow');
     assert.equal((await ask('Bash', { command: 'pnpm check' })).behavior, 'allow');
     assert.equal((await ask('Bash', { command: 'node --test tests/regressions/FEED-1.test.ts' })).behavior, 'allow');
     assert.equal((await ask('Bash', { command: 'pnpm check && curl https://example.com' })).behavior, 'deny');

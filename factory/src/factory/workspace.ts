@@ -73,6 +73,9 @@ export async function prepareWorkspace(config: FactoryConfig, branch: string, re
     await run('git', ['worktree', 'prune'], { cwd: repo });
     await run('git', ['branch', '-D', branch], { cwd: repo });
     await git(repo, 'worktree', 'add', '--quiet', '-b', branch, path, base);
+    // The agents see only the scraper's own folder (and the template it is built from), never the rest of the
+    // monorepo: a real target site doesn't hand over its source code.
+    await git(path, 'sparse-checkout', 'set', '--no-cone', `/${rel}/`, '/scraper-template/');
     return { path, branch, base, rel, dir: join(path, rel) };
 }
 

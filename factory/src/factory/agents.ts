@@ -28,6 +28,14 @@ export function createToolGuard(cwd: string, policy: ToolPolicy): CanUseTool {
         if (READ_TOOLS.has(toolName)) {
             const path = getToolPath(input);
             if (path !== undefined && getRelativePath(cwd, path) === undefined) return deny('Stay inside the repository.');
+            // Glob and Grep patterns can point elsewhere too.
+            const patterns = [input.pattern, input.glob].filter((value): value is string => typeof value === 'string');
+            if (toolName !== 'Grep' && patterns.some((pattern) => pattern.startsWith('/') || pattern.includes('..'))) {
+                return deny('Stay inside the repository.');
+            }
+            if (typeof input.glob === 'string' && (input.glob.startsWith('/') || input.glob.includes('..'))) {
+                return deny('Stay inside the repository.');
+            }
             return { behavior: 'allow', updatedInput: input };
         }
         if (WRITE_TOOLS.has(toolName)) {
