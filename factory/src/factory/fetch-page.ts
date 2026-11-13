@@ -10,7 +10,10 @@ export async function fetchPage(url: string, env: NodeJS.ProcessEnv = process.en
                 signal: AbortSignal.timeout(90_000),
             });
             if (response.ok) return { html: await response.text(), via: 'Bright Data Web Unlocker' };
-            if (attempt >= 2 || response.status < 500) throw new Error(`Bright Data answered ${response.status}`);
+            if (attempt >= 2 || response.status < 500) {
+                const detail = response.headers.get('x-brd-error') ?? (await response.text()).slice(0, 300);
+                throw new Error(`Bright Data answered ${response.status}: ${detail}`);
+            }
         }
     }
     const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
