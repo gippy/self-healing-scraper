@@ -1,4 +1,4 @@
-export const BRAND = 'Silicon & Gavel';
+export const BRAND = 'Silicon Auction';
 
 /** Raise this when the catalog changes; on startup a saved auction from another version is cleared and reseeded. */
 export const CATALOG_VERSION = 'gpu-1';

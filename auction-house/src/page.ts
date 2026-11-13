@@ -78,7 +78,7 @@ ${options.css}
 </head>
 <body${options.bodyAttributes ? ` ${options.bodyAttributes}` : ''}>
 <header class="site-header">
-  <a class="brand" href="/"><span class="brand-mark">G&amp;G</span>${escapeHtml(BRAND)}</a>
+  <a class="brand" href="/"><span class="brand-mark">SA</span>${escapeHtml(BRAND)}</a>
   ${nav}
   <button class="theme-switch" type="button">Theme</button>
 </header>

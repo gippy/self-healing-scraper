@@ -1,6 +1,6 @@
 # auction-house
 
-Silicon & Gavel is a fictional live auction house for graphics cards and AI accelerators: six categories,
+Silicon Auction is a fictional live auction house for graphics cards and AI accelerators: six categories,
 about 60 open lots, bids that keep rising, lots that sell and new lots that appear. Every model name is made up. It is the site the self-healing scrapers scrape. A layout
 switch changes its markup on the fly, so we can break those scrapers on purpose, live, and watch the factory
 heal them.
