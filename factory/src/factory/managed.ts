@@ -104,8 +104,8 @@ function globsFor(prefix: string): string[] {
 }
 
 // The policy as a Harness Runtime permission block. Anything not allowed is denied; nothing asks, because
-// nobody is there to approve. Path and command rules are best-effort on the platform (they match literally
-// and can't forbid `;` chaining), so the patch filter in `collectPatch` is what really enforces `writable`.
+// nobody is there to approve. Edits outside `writable` are denied in the sandbox (seen live), but Bash can
+// still write anywhere there, so the patch filter in `collectPatch` is what really enforces `writable`.
 export function buildPermissions(policy: ToolPolicy, tools: string[]): Json {
     const rules: Json[] = [{ tool: 'file.read', action: 'allow' }];
     if (tools.some((tool) => WRITE_TOOLS.has(tool))) {
@@ -113,10 +113,15 @@ export function buildPermissions(policy: ToolPolicy, tools: string[]): Json {
             for (const path of globsFor(prefix)) rules.push({ tool: 'file.write', action: 'allow', match: { path }, enforcement: 'best-effort' });
         }
     }
+    // Seen live on the claude-code harness: with these allow rules any command runs, and a catch-all bash deny
+    // removes the shell altogether (allow rules after it don't bring it back). So agents with Bash get it
+    // unrestricted inside the sandbox, and agents without it get none.
     if (tools.includes('Bash')) {
         for (const command of policy.commands) {
             rules.push({ tool: 'bash', action: 'allow', match: { command } }, { tool: 'bash', action: 'allow', match: { command: `${command} *` } });
         }
+    } else {
+        rules.push({ tool: 'bash', action: 'deny' });
     }
     return { default: 'deny', filesystem: { mode: 'workspace-write' }, rules };
 }
@@ -356,12 +361,12 @@ export async function runAgentManaged<T>(options: AgentOptions, deps: ManagedDep
         const seeded = await exec(api, sessionId, [
             'sh',
             '-c',
-            // The harness keeps Claude Code's state in /workspace/.agent-home; never part of the patch.
-            `set -e; tar --no-same-owner -xf ${SEED_FILE}; rm ${SEED_FILE}; ${GIT} init -q; echo .agent-home/ >> .git/info/exclude; ${GIT} add -A; ` +
+            // The harness keeps Claude Code's state and log in /workspace; never part of the patch.
+            `set -e; tar --no-same-owner -xf ${SEED_FILE}; rm ${SEED_FILE}; ${GIT} init -q; printf '.agent-home/\\nclaude-code.log\\n' >> .git/info/exclude; ${GIT} add -A; ` +
                 `${GIT} -c user.name=factory -c user.email=factory@localhost commit -q --no-verify --allow-empty -m baseline; ` +
                 'owner=$(stat -c %u:%g . 2>/dev/null || true); ' +
                 'if [ "$(id -u)" = 0 ] && [ -n "$owner" ]; then chown -R "$owner" .; fi; ' +
-                'echo "exec as $(id -un), workspace owned by $(stat -c %U . 2>/dev/null || echo ?)"',
+                'echo "exec as $(id -un), workspace owned by $(stat -c %U . 2>/dev/null || echo ?), node $(node --version 2>/dev/null || echo none)"',
         ]);
         options.onStep?.(`sandbox ready: ${(seeded.stdout ?? '').trim().slice(0, 120)}`);
 

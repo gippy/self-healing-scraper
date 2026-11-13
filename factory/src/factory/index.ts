@@ -23,6 +23,7 @@ import {
 } from './prompts.ts';
 import { getScraper } from '../registry.ts';
 import { triggerDeployment, waitForApp } from './digitalocean.ts';
+import { runAgentManaged } from './managed.ts';
 import { mergePullRequest, openPullRequest, resolveSentryIssue, resumeScraper, waitForDeploy } from './ship.ts';
 import {
     commitAll,
@@ -48,6 +49,12 @@ export type FactoryDeps = {
 const BUILD_TOOLS = ['Read', 'Glob', 'Grep', 'Edit', 'Write', 'Bash'];
 const TEST_COMMANDS = ['pnpm check', 'pnpm test', 'node --test'];
 
+// `AGENT_RUNTIME=do-managed` runs every agent on DigitalOcean Managed Agents; the default runs them here.
+// Either way the agent's edits land in the local worktree, where the factory's own checks run.
+export function getAgentRuntime(): typeof runAgent {
+    return process.env.AGENT_RUNTIME === 'do-managed' ? runAgentManaged : runAgent;
+}
+
 // One job at a time, create or heal: worktrees share one clone, and a demo is easier to follow that way.
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -60,7 +67,7 @@ export function enqueue<T>(job: () => Promise<T>): Promise<T> {
 export async function runFactory(
     input: FactoryInput,
     emit: Emit,
-    deps: FactoryDeps = { config: getFactoryConfig(), runAgent, askGate },
+    deps: FactoryDeps = { config: getFactoryConfig(), runAgent: getAgentRuntime(), askGate },
 ): Promise<FactoryResult> {
     return enqueue(() => fixIssue(input, emit, deps));
 }

@@ -191,8 +191,11 @@ test('maps the tool policy to a deny-by-default permission block', () => {
         { tool: 'bash', action: 'allow', match: { command: 'pnpm check' } },
         { tool: 'bash', action: 'allow', match: { command: 'pnpm check *' } },
     ]);
-    // Without write tools or Bash, nothing but reads is allowed.
-    assert.deepEqual(buildPermissions({ writable: ['src/'], commands: ['pnpm check'] }, ['Read']).rules, [{ tool: 'file.read', action: 'allow' }]);
+    // Without write tools or Bash, nothing but reads is allowed, and the shell is denied outright.
+    assert.deepEqual(buildPermissions({ writable: ['src/'], commands: ['pnpm check'] }, ['Read']).rules, [
+        { tool: 'file.read', action: 'allow' },
+        { tool: 'bash', action: 'deny' },
+    ]);
 });
 
 test('finds the JSON answer', () => {

@@ -11,7 +11,7 @@ import { type FactoryConfig, getFactoryConfig } from './config.ts';
 import { createApp, getScraperEnvs, getScraperSpec, triggerDeployment, waitForApp } from './digitalocean.ts';
 import { fetchPage } from './fetch-page.ts';
 import { askCreateGate, type CreateAnswers, decideCreate } from './gate.ts';
-import { enqueue } from './index.ts';
+import { enqueue, getAgentRuntime } from './index.ts';
 import {
     GENERATE_SCHEMA,
     GENERATE_SYSTEM,
@@ -89,7 +89,7 @@ async function build(request: CreateRequest, emit: Emit, config: FactoryConfig):
         return { outcome, reason, prUrl };
     };
     const agent = async <T>(stage: Stage, name: string, run: Omit<Parameters<typeof runAgent>[0], 'apiKey' | 'homeDir' | 'onStep' | 'baseUrl' | 'smallModel'>) => {
-        const outcome: AgentRun<T> = await runAgent<T>({
+        const outcome: AgentRun<T> = await getAgentRuntime()<T>({
             ...run,
             apiKey: config.anthropicApiKey ?? '',
             baseUrl: config.anthropicBaseUrl,
