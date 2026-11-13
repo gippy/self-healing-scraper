@@ -15,6 +15,9 @@ const DO_INFERENCE_HOST = 'inference.do-ai.run';
 const SANDBOX_SIZE = 'mars-2vcpu-4gb';
 const SEED_FILE = '.factory-seed.tar';
 const PATCH_FILE = '.git/factory.patch';
+// /workspace belongs to the agent's user, not to the exec user, so git would refuse it as dubious.
+const GIT = "git -c safe.directory='*'";
+const GIT_ARGV = ['git', '-c', 'safe.directory=*'];
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit']);
 // The download endpoint appends `DOWSSHA1` + 64 hex chars of SHA-256 + `\n` to every payload.
 const FOOTER_BYTES = 73;
@@ -229,6 +232,7 @@ async function runTurn(api: Api, sessionId: string, input: string, options: Agen
         const { run_id: runId } = await api.json<{ run_id?: string }>('POST', `${base}/input`, { json: { text: input } });
         const seen = new Set<string>();
         for await (const event of readEvents(stream.body)) {
+            if (process.env.MANAGED_DEBUG) console.error(`[managed] ${event.type} ${event.run_id ?? ''} ${JSON.stringify(event.data ?? {}).slice(0, 300)}`);
             if (event.event_id) {
                 if (seen.has(event.event_id)) continue;
                 seen.add(event.event_id);
@@ -307,14 +311,14 @@ export function isWritable(path: string, policy: ToolPolicy): boolean {
 
 // The agent's changes since the baseline, only under the writable prefixes. Symlinks never come back.
 async function collectPatch(api: Api, sessionId: string, policy: ToolPolicy): Promise<{ patch?: Buffer; dropped: string[] }> {
-    await exec(api, sessionId, ['git', 'add', '-A']);
-    const { stdout = '' } = await exec(api, sessionId, ['git', 'diff', '--cached', '--name-only', '--no-renames', '-z']);
+    await exec(api, sessionId, [...GIT_ARGV, 'add', '-A']);
+    const { stdout = '' } = await exec(api, sessionId, [...GIT_ARGV, 'diff', '--cached', '--name-only', '--no-renames', '-z']);
     const changed = stdout.split('\0').filter(Boolean);
     const allowed = changed.filter((path) => isWritable(path, policy));
     const dropped = changed.filter((path) => !isWritable(path, policy));
     if (allowed.length === 0) return { dropped };
     // `sh -c '... "$@"'` passes the paths as arguments, never through the shell.
-    await exec(api, sessionId, ['sh', '-c', `git diff --cached --binary --no-renames -- "$@" > ${PATCH_FILE}`, 'sh', ...allowed]);
+    await exec(api, sessionId, ['sh', '-c', `${GIT} diff --cached --binary --no-renames -- "$@" > ${PATCH_FILE}`, 'sh', ...allowed]);
     const patch = await download(api, sessionId, PATCH_FILE);
     if (/^(new file mode|new mode|old mode) 120000$/m.test(patch.toString('latin1'))) throw new Error('the agent created a symlink');
     return { patch, dropped };
@@ -347,12 +351,19 @@ export async function runAgentManaged<T>(options: AgentOptions, deps: ManagedDep
             body: seed,
             headers: { 'X-Content-Sha256': createHash('sha256').update(seed).digest('hex') },
         });
-        await exec(api, sessionId, [
+        // Exec runs as another user than the one owning /workspace (the agent's), so git needs safe.directory,
+        // and the extracted files go to the workspace owner so the agent can edit them.
+        const seeded = await exec(api, sessionId, [
             'sh',
             '-c',
-            `set -e; tar --no-same-owner -xf ${SEED_FILE}; rm ${SEED_FILE}; git init -q; git add -A; ` +
-                'git -c user.name=factory -c user.email=factory@localhost commit -q --no-verify --allow-empty -m baseline',
+            // The harness keeps Claude Code's state in /workspace/.agent-home; never part of the patch.
+            `set -e; tar --no-same-owner -xf ${SEED_FILE}; rm ${SEED_FILE}; ${GIT} init -q; echo .agent-home/ >> .git/info/exclude; ${GIT} add -A; ` +
+                `${GIT} -c user.name=factory -c user.email=factory@localhost commit -q --no-verify --allow-empty -m baseline; ` +
+                'owner=$(stat -c %u:%g . 2>/dev/null || true); ' +
+                'if [ "$(id -u)" = 0 ] && [ -n "$owner" ]; then chown -R "$owner" .; fi; ' +
+                'echo "exec as $(id -un), workspace owned by $(stat -c %U . 2>/dev/null || echo ?)"',
         ]);
+        options.onStep?.(`sandbox ready: ${(seeded.stdout ?? '').trim().slice(0, 120)}`);
 
         turn = await runTurn(api, sessionId, buildInput(options), options, deps.runTimeoutMs ?? 20 * 60_000);
         // Bring the changes back even when the run failed: a local run leaves them in the worktree too.

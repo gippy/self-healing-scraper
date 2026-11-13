@@ -50,6 +50,8 @@ export async function getScraperEnvs(
         ADMIN_SECRET: env.SCRAPER_ADMIN_SECRET,
         BRIGHTDATA_API_KEY: env.BRIGHTDATA_API_KEY,
         BRIGHTDATA_UNLOCKER_ZONE: env.BRIGHTDATA_UNLOCKER_ZONE,
+        // Without Bright Data the scraper fetches pages directly.
+        FAKE_BRIGHTDATA: env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_UNLOCKER_ZONE ? undefined : '1',
         SENTRY_DSN: env.SENTRY_DSN,
         SENTRY_ENVIRONMENT: 'production',
         SNOWFLAKE_ACCOUNT: env.SNOWFLAKE_ACCOUNT,

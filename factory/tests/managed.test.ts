@@ -161,7 +161,8 @@ test('runs the agent in the sandbox and brings back only the writable changes', 
     assert.equal(await readFile(join(repo, 'src/parsers/index.js'), 'utf8'), 'export const add = (a, b) => a + b;\n');
     assert.equal(await readFile(join(repo, 'src/parsers/index.test.js'), 'utf8'), 'test\n');
     assert.equal(await readFile(join(repo, 'README.md'), 'utf8'), '# scraper\n');
-    assert.deepEqual(steps.slice(1), ['Edit src/parsers/index.js', 'dropped changes outside the writable paths: README.md']);
+    assert.match(steps[1] ?? '', /^sandbox ready: exec as /);
+    assert.deepEqual(steps.slice(2), ['Edit src/parsers/index.js', 'dropped changes outside the writable paths: README.md']);
     // The prompt carries the system prompt and the answer format.
     assert.match(fake.getInput(), /You fix scrapers\.[\s\S]*Fix add\(\)[\s\S]*"required":\["fixed"\]/);
     // The sandbox and its saved config are removed.
@@ -242,7 +243,9 @@ test('live: an agent on Managed Agents fixes a one-line bug and the patch lands 
         git('init', '-q');
         git('add', '-A');
         git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init');
-        assert.notEqual(spawnSync('node', ['--test'], { cwd: scratch }).status, 0);
+        // A clean env: inside `node --test`, NODE_TEST_CONTEXT would make the nested run report to this one.
+        const runTests = () => spawnSync('node', ['--test'], { cwd: scratch, env: { PATH: process.env.PATH } }).status;
+        assert.notEqual(runTests(), 0);
 
         const run = await runAgentManaged<{ fixed: boolean; summary: string }>({
             cwd: scratch,
@@ -262,7 +265,7 @@ test('live: an agent on Managed Agents fixes a one-line bug and the patch lands 
         });
         console.log(`  ok=${run.ok} cost=$${run.costUsd} output=${JSON.stringify(run.output)} error=${run.error ?? ''}`);
         assert.equal(run.ok, true, run.error);
-        assert.equal(spawnSync('node', ['--test'], { cwd: scratch }).status, 0);
+        assert.equal(runTests(), 0);
         assert.match(execFileSync('git', ['diff'], { cwd: scratch, encoding: 'utf8' }), /\+export const add = \(a, b\) => a \+ b;/);
     } finally {
         await rm(scratch, { recursive: true, force: true });
