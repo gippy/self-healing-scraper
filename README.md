@@ -12,6 +12,36 @@ earlier repair that bent the parser toward wrong data was stopped by the reviewe
 
 Built at the AIE x MLH Hackathon @ Code Summit (2026-11-13).
 
+## Architecture
+
+![Architecture: the auction house, Bright Data, the scraper apps, Snowflake, Sentry, the monitor, the factory and GitHub, with the create path in lime and the repair path in orange](docs/architecture.png)
+
+Lime is the create path: a URL goes to the factory, which inspects the site through Bright Data, opens a PR and
+deploys a new scraper app that writes rows to Snowflake. Orange is the repair path: the site changes, the scraper
+sends the error and the failed page to Sentry, the monitor pauses the scraper and hands it to the factory, and
+the fix ships as a merged PR and a redeploy.
+
+### How each service is used
+
+| Service | What it does here |
+|---|---|
+| **DigitalOcean App Platform** | Hosts the auction house and every scraper, one app per scraper. The factory creates the app through the Apps API and triggers a redeploy after each merged heal. |
+| **DigitalOcean Serverless Inference** | Runs the factory's agents on open-weight models through its Anthropic-compatible endpoint. |
+| **DigitalOcean Managed Agents** | Optional agent runtime (`AGENT_RUNTIME=do-managed`): the agent works in a sandbox microVM and its changes come back as a patch. Proven live; the demonstrated heal ran on Serverless Inference. |
+| **Gemini Decision 1** | Answers typed questions with probabilities: severity and fixability in the monitor's triage, and the ship or don't-ship gates in create and heal. Code applies the thresholds. |
+| **Gemini 4 Hydrogen** | Reads a failing scraper's Sentry event and recent logs and explains in plain language what broke, for the dashboard and the triage. |
+| **Gemini image generation** | Made the auction house's product photos once (`pnpm generate-images`). |
+| **Sentry** | Scrapers report parser failures with the raw page attached, tagged with the scraper's name. The monitor polls it; the factory resolves the issue after the redeploy. |
+| **Bright Data Web Unlocker** | Fetches every page, both when the factory investigates a site and on every scraper poll. |
+| **Tiger Data** | The auction house's database. Every bid lands in the `bids` hypertable; the `lot_price_1m` continuous aggregate keeps each lot's highest bid and bid count per minute. |
+| **Snowflake** | Scrapers write every poll to `SCRAPED_ITEMS`. The `LOT_PRICES` dynamic table turns that into one live row per lot (first price, latest price, growth), refreshed every minute. |
+| **Apify prompt guard** | Screens fetched pages and Sentry events before any model reads them. Flagged or unchecked text never reaches a model. |
+| **GitHub** | Every new scraper and every heal lands as a pull request on this repo; App Platform builds the scrapers from `main`. |
+| **Claude Agent SDK** | The agent harness: runs the builder, fixer and reviewer agents, with a permission callback fencing their tools. |
+| **Kimi K3.1 Pro** | Builder and fixer: writes new parsers with their tests and fixes broken ones. |
+| **GLM 5.3** | Reviewer from a different lab: checks a new parser against the live page and tries to break each fix. |
+| **MiniMax M3.1 Flash** | The harness's small model for side tasks. |
+
 ## The pieces
 
 ```
