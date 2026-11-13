@@ -7,9 +7,23 @@ const TITLE_SELECTOR = '.lot-title';
 const PRICE_SELECTOR = '.lot-bid';
 const BIDS_SELECTOR = '.lot-bids';
 const ENDS_SELECTOR = 'time.lot-ends';
+const TILE_SELECTOR = 'article.tile';
+const TILE_TITLE_SELECTOR = '.tile__title';
+const TILE_BIDS_SELECTOR = '.tile__bids';
 const ID_ATTRIBUTE = 'data-lot';
 const CATEGORY_ATTRIBUTE = 'data-category';
 const DATETIME_ATTRIBUTE = 'datetime';
+const BID_ATTRIBUTE = 'data-bid';
+const CURRENCY_ATTRIBUTE = 'data-currency';
+const ENDS_ATTRIBUTE = 'data-ends';
+
+type Listing = ReturnType<cheerio.CheerioAPI>;
+type ReadListing = ($listing: Listing, url: string) => Item;
+
+const LAYOUTS: { selector: string; read: ReadListing }[] = [
+  { selector: LOT_SELECTOR, read: readLot },
+  { selector: TILE_SELECTOR, read: readTile },
+];
 
 /**
  * Reads the open auction lots from one fetched page. `raw` is the page exactly as fetched,
@@ -17,28 +31,47 @@ const DATETIME_ATTRIBUTE = 'datetime';
  */
 export function parse(raw: string, url: string): Item[] {
   const $ = cheerio.load(raw);
-  const lots = $(LOT_SELECTOR);
-  if (lots.length === 0) {
+  const layout = LAYOUTS.find(({ selector }) => $(selector).length > 0);
+  if (!layout) {
     throw new ParseError(`No auction lots found on ${url}`);
   }
-  return lots.toArray().map((lot) => {
-    const $lot = $(lot);
-    const id = $lot.attr(ID_ATTRIBUTE);
-    if (!id) {
-      throw new ParseError(`A lot on ${url} is missing its ${ID_ATTRIBUTE} id`);
-    }
-    // Discounted lots show the current price in <ins>, the old one struck out in <del>.
-    const bid = $lot.find(PRICE_SELECTOR);
-    return {
-      id,
-      title: required($lot.find(TITLE_SELECTOR).text(), 'title', id),
-      category: required($lot.attr(CATEGORY_ATTRIBUTE), 'category', id),
-      price: parsePrice((bid.find('ins').text() || bid.text()).trim(), id),
-      bids: parseBids($lot.find(BIDS_SELECTOR).text().trim(), id),
-      status: readStatus($lot.hasClass('is-sold'), $lot.hasClass('ending')),
-      endsAt: parseEndTime($lot.find(ENDS_SELECTOR).attr(DATETIME_ATTRIBUTE), id),
-    };
-  });
+  return $(layout.selector).toArray().map((element) => layout.read($(element), url));
+}
+
+/** Reads one `li.lot` row. */
+function readLot($lot: Listing, url: string): Item {
+  const id = $lot.attr(ID_ATTRIBUTE);
+  if (!id) {
+    throw new ParseError(`A lot on ${url} is missing its ${ID_ATTRIBUTE} id`);
+  }
+  // Discounted lots show the current price in <ins>, the old one struck out in <del>.
+  const bid = $lot.find(PRICE_SELECTOR);
+  return {
+    id,
+    title: required($lot.find(TITLE_SELECTOR).text(), 'title', id),
+    category: required($lot.attr(CATEGORY_ATTRIBUTE), 'category', id),
+    price: parsePrice((bid.find('ins').text() || bid.text()).trim(), id),
+    bids: parseBids($lot.find(BIDS_SELECTOR).text().trim(), id),
+    status: readStatus($lot.hasClass('is-sold'), $lot.hasClass('ending')),
+    endsAt: parseEndTime($lot.find(ENDS_SELECTOR).attr(DATETIME_ATTRIBUTE), id),
+  };
+}
+
+/** Reads one `article.tile` card: the price lives in data-bid, the end time in data-ends. */
+function readTile($tile: Listing, url: string): Item {
+  const id = $tile.attr(ID_ATTRIBUTE);
+  if (!id) {
+    throw new ParseError(`A lot on ${url} is missing its ${ID_ATTRIBUTE} id`);
+  }
+  return {
+    id,
+    title: required($tile.find(TILE_TITLE_SELECTOR).text(), 'title', id),
+    category: required($tile.attr(CATEGORY_ATTRIBUTE), 'category', id),
+    price: parseTilePrice($tile.attr(BID_ATTRIBUTE), $tile.attr(CURRENCY_ATTRIBUTE), id),
+    bids: parseBids($tile.find(TILE_BIDS_SELECTOR).text().trim(), id),
+    status: readStatus($tile.hasClass('is-sold'), $tile.hasClass('ending')),
+    endsAt: parseEndTime($tile.attr(ENDS_ATTRIBUTE), id),
+  };
 }
 
 /** Trims a text/attribute value and throws with a message naming the field when it is empty. */
@@ -56,6 +89,14 @@ function parsePrice(text: string, id: string): Item['price'] {
     throw new ParseError(`Unreadable price "${text}" on lot ${id}`);
   }
   return { amount: Number(match[1]), currency: 'USD' };
+}
+
+function parseTilePrice(amount: string | undefined, currency: string | undefined, id: string): Item['price'] {
+  const value = Number(required(amount, 'price', id));
+  if (!Number.isFinite(value)) {
+    throw new ParseError(`Unreadable price "${amount}" on lot ${id}`);
+  }
+  return { amount: value, currency: required(currency, 'currency', id) };
 }
 
 function parseBids(text: string, id: string): number {
