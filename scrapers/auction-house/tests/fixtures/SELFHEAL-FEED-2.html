@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auction floor | Gavel &amp; Grain Auctions</title>
+<script>(function(){var t;try{t=localStorage.getItem('theme')}catch(e){}
+if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+document.documentElement.dataset.theme=t})();</script>
+<style>
+:root{--bg:#f7f3ec;--surface:#fff;--text:#1b1712;--muted:#6f665a;--line:#e7dfd2;--accent:#d9480f;--accent-soft:#ffe8d9;--ok:#2b8a3e;--bad:#e03131;--shadow:0 1px 2px rgba(60,40,10,.06),0 6px 20px rgba(60,40,10,.07)}
+:root[data-theme=dark]{--bg:#12100d;--surface:#1d1a16;--text:#f4efe7;--muted:#a89f92;--line:#36302a;--accent:#ff8a3d;--accent-soft:#3d2414;--ok:#51cf66;--bad:#ff6b6b;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit}
+.site-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:20px;padding:14px 28px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
+.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;font-size:15px;font-weight:900}
+.category-nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.category-nav a{padding:6px 12px;border-radius:999px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;white-space:nowrap}
+.category-nav a:hover,.category-nav a.active{background:var(--accent-soft);color:var(--accent)}
+.live-indicator{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
+.live-indicator::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.live-indicator.on{color:var(--ok)}
+.live-indicator.on::before{background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
+.theme-switch{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap}
+.page{max-width:1320px;margin:0 auto;padding:28px}
+.site-footer{max-width:1320px;margin:0 auto;padding:28px;color:var(--muted);font-size:14px}
+@media (max-width:640px){.site-header{flex-wrap:wrap;padding:12px 16px}.category-nav{order:3;flex-basis:100%}.page{padding:16px}}
+.v2-head{margin:8px 0 18px;font:700 clamp(28px,3.4vw,40px)/1.1 Georgia,"Times New Roman",serif;letter-spacing:-.01em}
+.ticker{display:flex;gap:28px;overflow-x:auto;scrollbar-width:none;margin:0 0 22px;padding:10px 0;border-top:2px solid var(--text);border-bottom:2px solid var(--text);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.ticker__item.is-new{color:var(--accent)}
+.auction-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px;background:var(--line);border:2px solid var(--line)}
+.tile{position:relative;display:flex;flex-direction:column;gap:8px;min-height:220px;padding:20px 20px 64px;background:var(--surface)}
+.tile .lot-image{display:block;width:calc(100% + 40px);height:auto;aspect-ratio:1/1;margin:-20px -20px 6px;object-fit:cover;filter:saturate(.85) contrast(1.05);background:#ece6dc}
+.tile::after{content:"$" attr(data-bid);position:absolute;left:20px;bottom:18px;font:800 26px/1 Georgia,serif;font-variant-numeric:tabular-nums}
+.tile__title{margin:0;font:700 16px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.05em}
+.tile__meta{display:flex;flex-wrap:wrap;gap:6px}
+.tile__meta span{padding:2px 8px;border-radius:2px;background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.tile__body{margin:0;color:var(--muted);font-size:14px}
+.tile.ending .tile__ends{background:var(--bad);color:#fff}
+.tile.flash{animation:flash 1.4s ease-out}
+.tile.is-new{animation:arrive .7s ease-out;box-shadow:inset 0 0 0 3px var(--accent)}
+.tile.is-sold{animation:leave 2.6s ease-in forwards}
+.tile.is-sold::before{content:"Sold";position:absolute;top:18px;right:18px;z-index:1;padding:4px 10px;background:var(--ok);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
+@keyframes arrive{0%{opacity:0}100%{opacity:1}}
+@keyframes leave{0%,70%{opacity:1}100%{opacity:.2}}
+</style>
+</head>
+<body data-live="v2" data-category-names="{&quot;hand-tools&quot;:&quot;Hand Tools&quot;,&quot;power-tools&quot;:&quot;Power Tools&quot;,&quot;lumber&quot;:&quot;Lumber &amp; Live-Edge Slabs&quot;,&quot;chairs-stools&quot;:&quot;Chairs &amp; Stools&quot;,&quot;tables&quot;:&quot;Tables&quot;,&quot;cabinets-storage&quot;:&quot;Cabinets &amp; Storage&quot;}">
+<header class="site-header">
+  <a class="brand" href="/"><span class="brand-mark">G&amp;G</span>Gavel &amp; Grain Auctions</a>
+  <nav class="category-nav"><a href="/" class="active">All lots</a><a href="/c/hand-tools">Hand Tools</a><a href="/c/power-tools">Power Tools</a><a href="/c/lumber">Lumber &amp; Live-Edge Slabs</a><a href="/c/chairs-stools">Chairs &amp; Stools</a><a href="/c/tables">Tables</a><a href="/c/cabinets-storage">Cabinets &amp; Storage</a></nav>
+  <span class="live-indicator">Connecting</span>
+  <button class="theme-switch" type="button">Theme</button>
+</header>
+<div class="page">
+<h1 class="v2-head">On the floor now</h1>
+<div class="ticker"><span class="ticker__item">Track Saw with Two Rails · $560.00</span><span class="ticker__item">Three-Legged Milking Stool · $48.00</span><span class="ticker__item">Shaker Side Table with Drawer · $235.00</span><span class="ticker__item">Black Walnut Live-Edge Slab, 6 Feet · $580.00</span><span class="ticker__item">Pine Blanket Chest · $305.00</span><span class="ticker__item">Low-Angle Block Plane · $56.00</span><span class="ticker__item">Oscillating Spindle Sander · $180.00</span><span class="ticker__item">Solid Walnut Writing Desk · $970.00</span></div>
+<main class="auction-grid">
+  <article class="tile" data-lot="LOT-0057" data-category="hand-tools" data-bid="55.00" data-currency="USD" data-ends="2026-11-13T20:48:44Z">
+    <img class="lot-image" src="/images/combination-waterstone-1000-6000.jpg" alt="Combination Waterstone, 1000/6000" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Combination Waterstone, 1000/6000</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 10s</span></div>
+    <p class="tile__body">Medium and fine grit in one stone, with a non-slip base.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0016" data-category="lumber" data-bid="250.00" data-currency="USD" data-ends="2026-11-13T20:48:59Z">
+    <img class="lot-image" src="/images/cherry-boards-bundle-of-ten.jpg" alt="Cherry Boards, Bundle of Ten" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Cherry Boards, Bundle of Ten</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">10 bids</span><span class="tile__ends">Ends in 24s</span></div>
+    <p class="tile__body">Four-quarter stock that darkens to a rich red with time.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0041" data-category="cabinets-storage" data-bid="85.00" data-currency="USD" data-ends="2026-11-13T20:49:37Z">
+    <img class="lot-image" src="/images/shaker-pegboard-shelf.jpg" alt="Shaker Pegboard Shelf" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Shaker Pegboard Shelf</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">3 bids</span><span class="tile__ends">Ends in 1m 2s</span></div>
+    <p class="tile__body">Three-foot shelf with five turned maple pegs.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0023" data-category="chairs-stools" data-bid="220.00" data-currency="USD" data-ends="2026-11-13T20:49:39Z">
+    <img class="lot-image" src="/images/folding-mahogany-campaign-chair.jpg" alt="Folding Mahogany Campaign Chair" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Folding Mahogany Campaign Chair</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">3 bids</span><span class="tile__ends">Ends in 1m 4s</span></div>
+    <p class="tile__body">Leather sling seat; folds flat for travel.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0017" data-category="chairs-stools" data-bid="610.00" data-currency="USD" data-ends="2026-11-13T20:49:42Z">
+    <img class="lot-image" src="/images/danish-style-teak-lounge-chair.jpg" alt="Danish-Style Teak Lounge Chair" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Danish-Style Teak Lounge Chair</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 1m 8s</span></div>
+    <p class="tile__body">Low, wide seat with wool cushions and a sloped back.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0032" data-category="chairs-stools" data-bid="135.00" data-currency="USD" data-ends="2026-11-13T20:49:44Z">
+    <img class="lot-image" src="/images/woven-cord-footstool.jpg" alt="Woven Cord Footstool" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Woven Cord Footstool</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 1m 9s</span></div>
+    <p class="tile__body">Danish cord seat on a square oak frame.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0031" data-category="hand-tools" data-bid="95.00" data-currency="USD" data-ends="2026-11-13T20:49:58Z">
+    <img class="lot-image" src="/images/brass-backed-dovetail-saw.jpg" alt="Brass-Backed Dovetail Saw" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Brass-Backed Dovetail Saw</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 1m 24s</span></div>
+    <p class="tile__body">Fine teeth and a heavy brass spine for straight, tight joints.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0034" data-category="tables" data-bid="185.00" data-currency="USD" data-ends="2026-11-13T20:50:05Z">
+    <img class="lot-image" src="/images/child-s-craft-table-with-two-stools.jpg" alt="Child&#39;s Craft Table with Two Stools" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Child&#39;s Craft Table with Two Stools</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">7 bids</span><span class="tile__ends">Ends in 1m 30s</span></div>
+    <p class="tile__body">Low birch table with a rounded edge and wipe-clean finish.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0028" data-category="chairs-stools" data-bid="540.00" data-currency="USD" data-ends="2026-11-13T20:50:58Z">
+    <img class="lot-image" src="/images/oak-church-pew-six-feet.jpg" alt="Oak Church Pew, Six Feet" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Oak Church Pew, Six Feet</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">11 bids</span><span class="tile__ends">Ends in 2m 23s</span></div>
+    <p class="tile__body">Reclaimed from a chapel. Seats three, worn smooth by decades of use.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0013" data-category="tables" data-bid="850.00" data-currency="USD" data-ends="2026-11-13T20:51:06Z">
+    <img class="lot-image" src="/images/oak-trestle-table-eight-feet.jpg" alt="Oak Trestle Table, Eight Feet" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Oak Trestle Table, Eight Feet</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 2m 31s</span></div>
+    <p class="tile__body">Pegged trestle base that knocks down for moving.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0059" data-category="chairs-stools" data-bid="360.00" data-currency="USD" data-ends="2026-11-13T20:51:24Z">
+    <img class="lot-image" src="/images/walnut-bar-stools-pair.jpg" alt="Walnut Bar Stools, Pair" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Walnut Bar Stools, Pair</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 2m 50s</span></div>
+    <p class="tile__body">Counter height with sculpted seats and brass footrests.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0055" data-category="tables" data-bid="710.00" data-currency="USD" data-ends="2026-11-13T20:51:38Z">
+    <img class="lot-image" src="/images/butcher-block-kitchen-island.jpg" alt="Butcher Block Kitchen Island" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Butcher Block Kitchen Island</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">9 bids</span><span class="tile__ends">Ends in 3m 4s</span></div>
+    <p class="tile__body">Maple top with an open shelf and towel bars.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0037" data-category="chairs-stools" data-bid="520.00" data-currency="USD" data-ends="2026-11-13T20:52:04Z">
+    <img class="lot-image" src="/images/shaker-ladder-back-rocking-chair.jpg" alt="Shaker Ladder-Back Rocking Chair" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Shaker Ladder-Back Rocking Chair</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 3m 29s</span></div>
+    <p class="tile__body">Maple frame with a woven tape seat. Rocks quietly.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0008" data-category="power-tools" data-bid="490.00" data-currency="USD" data-ends="2026-11-13T20:52:11Z">
+    <img class="lot-image" src="/images/sliding-compound-miter-saw.jpg" alt="Sliding Compound Miter Saw" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Sliding Compound Miter Saw</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">9 bids</span><span class="tile__ends">Ends in 3m 37s</span></div>
+    <p class="tile__body">Twelve-inch blade with laser line. Cuts wide boards in one pass.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0058" data-category="cabinets-storage" data-bid="530.00" data-currency="USD" data-ends="2026-11-13T20:52:21Z">
+    <img class="lot-image" src="/images/cherry-bookcase-five-shelves.jpg" alt="Cherry Bookcase, Five Shelves" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Cherry Bookcase, Five Shelves</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 3m 46s</span></div>
+    <p class="tile__body">Adjustable shelves and a crown molding top.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0042" data-category="power-tools" data-bid="235.00" data-currency="USD" data-ends="2026-11-13T20:52:32Z">
+    <img class="lot-image" src="/images/benchtop-drill-press.jpg" alt="Benchtop Drill Press" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Benchtop Drill Press</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 3m 58s</span></div>
+    <p class="tile__body">Twelve speeds, tilting table and a keyed chuck.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0045" data-category="cabinets-storage" data-bid="550.00" data-currency="USD" data-ends="2026-11-13T20:52:35Z">
+    <img class="lot-image" src="/images/apothecary-cabinet-thirty-drawers.jpg" alt="Apothecary Cabinet, Thirty Drawers" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Apothecary Cabinet, Thirty Drawers</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">1 bid</span><span class="tile__ends">Ends in 4m 0s</span></div>
+    <p class="tile__body">Small labeled drawers with brass card holders.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0010" data-category="chairs-stools" data-bid="135.00" data-currency="USD" data-ends="2026-11-13T20:53:01Z">
+    <img class="lot-image" src="/images/cherry-shop-stool-with-footrest.jpg" alt="Cherry Shop Stool with Footrest" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Cherry Shop Stool with Footrest</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">1 bid</span><span class="tile__ends">Ends in 4m 26s</span></div>
+    <p class="tile__body">Swivel seat and a footrest ring. Workbench height.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0040" data-category="hand-tools" data-bid="155.00" data-currency="USD" data-ends="2026-11-13T20:53:10Z">
+    <img class="lot-image" src="/images/set-of-six-bevel-edge-chisels.jpg" alt="Set of Six Bevel-Edge Chisels" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Set of Six Bevel-Edge Chisels</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">9 bids</span><span class="tile__ends">Ends in 4m 36s</span></div>
+    <p class="tile__body">Ash handles, sizes from 1/4 to 1 inch, honed and ready.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0052" data-category="chairs-stools" data-bid="490.00" data-currency="USD" data-ends="2026-11-13T20:53:25Z">
+    <img class="lot-image" src="/images/spindle-back-kitchen-chairs-set-of-four.jpg" alt="Spindle-Back Kitchen Chairs, Set of Four" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Spindle-Back Kitchen Chairs, Set of Four</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 4m 50s</span></div>
+    <p class="tile__body">Turned spindles and saddle seats in honey-toned pine.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0024" data-category="lumber" data-bid="135.00" data-currency="USD" data-ends="2026-11-13T20:53:29Z">
+    <img class="lot-image" src="/images/purpleheart-strips-bundle.jpg" alt="Purpleheart Strips, Bundle" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Purpleheart Strips, Bundle</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 4m 54s</span></div>
+    <p class="tile__body">Vivid purple accent wood for inlays and cutting boards.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0036" data-category="cabinets-storage" data-bid="180.00" data-currency="USD" data-ends="2026-11-13T20:53:31Z">
+    <img class="lot-image" src="/images/reclaimed-oak-wine-rack.jpg" alt="Reclaimed Oak Wine Rack" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Reclaimed Oak Wine Rack</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 4m 56s</span></div>
+    <p class="tile__body">Holds twenty-four bottles. Built from old floorboards.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0062" data-category="power-tools" data-bid="260.00" data-currency="USD" data-ends="2026-11-13T20:53:58Z">
+    <img class="lot-image" src="/images/shop-dust-collector-1-5-hp.jpg" alt="Shop Dust Collector, 1.5 HP" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Shop Dust Collector, 1.5 HP</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 5m 23s</span></div>
+    <p class="tile__body">Single stage with a fine filter bag and a wheeled base.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0035" data-category="lumber" data-bid="115.00" data-currency="USD" data-ends="2026-11-13T20:54:19Z">
+    <img class="lot-image" src="/images/spalted-maple-bowl-blanks-set-of-four.jpg" alt="Spalted Maple Bowl Blanks, Set of Four" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Spalted Maple Bowl Blanks, Set of Four</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 5m 44s</span></div>
+    <p class="tile__body">Dark zone lines through pale maple. Sealed ends.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0029" data-category="hand-tools" data-bid="155.00" data-currency="USD" data-ends="2026-11-13T20:54:37Z">
+    <img class="lot-image" src="/images/vintage-no-4-smoothing-plane.jpg" alt="Vintage No. 4 Smoothing Plane" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Vintage No. 4 Smoothing Plane</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">10 bids</span><span class="tile__ends">Ends in 6m 2s</span></div>
+    <p class="tile__body">Cast iron body, freshly flattened sole and a sharp iron. Takes whisper-thin shavings.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0060" data-category="lumber" data-bid="230.00" data-currency="USD" data-ends="2026-11-13T20:54:45Z">
+    <img class="lot-image" src="/images/bog-oak-offcuts.jpg" alt="Bog Oak Offcuts" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Bog Oak Offcuts</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">11 bids</span><span class="tile__ends">Ends in 6m 11s</span></div>
+    <p class="tile__body">Black oak preserved in peat for thousands of years.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0038" data-category="lumber" data-bid="175.00" data-currency="USD" data-ends="2026-11-13T20:54:46Z">
+    <img class="lot-image" src="/images/hard-maple-butcher-block-blank.jpg" alt="Hard Maple Butcher Block Blank" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Hard Maple Butcher Block Blank</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">3 bids</span><span class="tile__ends">Ends in 6m 12s</span></div>
+    <p class="tile__body">Edge-glued and sanded, ready for legs or a countertop.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0049" data-category="power-tools" data-bid="620.00" data-currency="USD" data-ends="2026-11-13T20:55:06Z">
+    <img class="lot-image" src="/images/fourteen-inch-bandsaw.jpg" alt="Fourteen-Inch Bandsaw" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Fourteen-Inch Bandsaw</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 6m 31s</span></div>
+    <p class="tile__body">Resaws boards up to six inches. Comes with three blades.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0061" data-category="tables" data-bid="240.00" data-currency="USD" data-ends="2026-11-13T20:55:16Z">
+    <img class="lot-image" src="/images/teak-nesting-tables-set-of-three.jpg" alt="Teak Nesting Tables, Set of Three" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Teak Nesting Tables, Set of Three</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 6m 41s</span></div>
+    <p class="tile__body">Mid-century style; the three slide neatly into one.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0012" data-category="cabinets-storage" data-bid="96.00" data-currency="USD" data-ends="2026-11-13T20:55:33Z">
+    <img class="lot-image" src="/images/spice-rack-with-turned-spindles.jpg" alt="Spice Rack with Turned Spindles" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Spice Rack with Turned Spindles</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 6m 59s</span></div>
+    <p class="tile__body">Two shelves with turned rails. Mounts on the wall.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0039" data-category="tables" data-bid="710.00" data-currency="USD" data-ends="2026-11-13T20:55:49Z">
+    <img class="lot-image" src="/images/pine-farmhouse-dining-table.jpg" alt="Pine Farmhouse Dining Table" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Pine Farmhouse Dining Table</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">9 bids</span><span class="tile__ends">Ends in 7m 15s</span></div>
+    <p class="tile__body">Seats eight. Breadboard ends and a scrubbed top.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0025" data-category="tables" data-bid="860.00" data-currency="USD" data-ends="2026-11-13T20:56:06Z">
+    <img class="lot-image" src="/images/split-top-beech-workbench.jpg" alt="Split-Top Beech Workbench" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Split-Top Beech Workbench</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">10 bids</span><span class="tile__ends">Ends in 7m 31s</span></div>
+    <p class="tile__body">Leg vise, wagon vise and a planing stop. Dead flat.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0006" data-category="lumber" data-bid="235.00" data-currency="USD" data-ends="2026-11-13T20:56:31Z">
+    <img class="lot-image" src="/images/quartersawn-white-oak-20-board-feet.jpg" alt="Quartersawn White Oak, 20 Board Feet" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Quartersawn White Oak, 20 Board Feet</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 7m 56s</span></div>
+    <p class="tile__body">Ray fleck on every face. Straight grain, ready to mill.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0048" data-category="power-tools" data-bid="165.00" data-currency="USD" data-ends="2026-11-13T20:56:59Z">
+    <img class="lot-image" src="/images/biscuit-joiner-in-carry-case.jpg" alt="Biscuit Joiner in Carry Case" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Biscuit Joiner in Carry Case</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 8m 24s</span></div>
+    <p class="tile__body">Adjustable fence for quick, aligned panel glue-ups.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0056" data-category="power-tools" data-bid="120.00" data-currency="USD" data-ends="2026-11-13T20:57:02Z">
+    <img class="lot-image" src="/images/cordless-drill-driver-kit-two-batteries.jpg" alt="Cordless Drill Driver Kit, Two Batteries" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Cordless Drill Driver Kit, Two Batteries</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">2 bids</span><span class="tile__ends">Ends in 8m 28s</span></div>
+    <p class="tile__body">Two-speed gearbox, charger and a hard case.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0063" data-category="hand-tools" data-bid="48.00" data-currency="USD" data-ends="2026-11-13T20:57:06Z">
+    <img class="lot-image" src="/images/hand-brace-with-auger-bits.jpg" alt="Hand Brace with Auger Bits" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Hand Brace with Auger Bits</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 8m 32s</span></div>
+    <p class="tile__body">Ten-inch sweep, ratchet chuck and a roll of seven auger bits.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0068" data-category="power-tools" data-bid="420.00" data-currency="USD" data-ends="2026-11-13T20:57:25Z">
+    <img class="lot-image" src="/images/contractor-table-saw-10-inch.jpg" alt="Contractor Table Saw, 10 Inch" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Contractor Table Saw, 10 Inch</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 8m 50s</span></div>
+    <p class="tile__body">Cast iron top, folding stand and a good rip fence.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0020" data-category="hand-tools" data-bid="130.00" data-currency="USD" data-ends="2026-11-13T20:57:44Z">
+    <img class="lot-image" src="/images/carving-gouge-set-twelve-pieces.jpg" alt="Carving Gouge Set, Twelve Pieces" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Carving Gouge Set, Twelve Pieces</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">3 bids</span><span class="tile__ends">Ends in 9m 10s</span></div>
+    <p class="tile__body">Palm-sized handles, assorted sweeps, in a canvas tool roll.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0002" data-category="tables" data-bid="590.00" data-currency="USD" data-ends="2026-11-13T20:57:48Z">
+    <img class="lot-image" src="/images/round-cherry-pedestal-table.jpg" alt="Round Cherry Pedestal Table" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Round Cherry Pedestal Table</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 9m 14s</span></div>
+    <p class="tile__body">Forty-two inches across on a turned column and three feet.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0026" data-category="cabinets-storage" data-bid="155.00" data-currency="USD" data-ends="2026-11-13T20:58:06Z">
+    <img class="lot-image" src="/images/wall-mounted-lumber-rack.jpg" alt="Wall-Mounted Lumber Rack" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Wall-Mounted Lumber Rack</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 9m 31s</span></div>
+    <p class="tile__body">Six steel-reinforced oak arms for long boards.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0065" data-category="lumber" data-bid="85.00" data-currency="USD" data-ends="2026-11-13T20:58:07Z">
+    <img class="lot-image" src="/images/curly-maple-guitar-top-set.jpg" alt="Curly Maple Guitar Top Set" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Curly Maple Guitar Top Set</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 9m 33s</span></div>
+    <p class="tile__body">Bookmatched pair with deep, even figure.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0009" data-category="lumber" data-bid="280.00" data-currency="USD" data-ends="2026-11-13T20:58:17Z">
+    <img class="lot-image" src="/images/hand-hewn-reclaimed-barn-beam.jpg" alt="Hand-Hewn Reclaimed Barn Beam" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Hand-Hewn Reclaimed Barn Beam</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 9m 42s</span></div>
+    <p class="tile__body">Old-growth oak from a 19th-century barn, adze marks intact.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0007" data-category="tables" data-bid="205.00" data-currency="USD" data-ends="2026-11-13T20:58:20Z">
+    <img class="lot-image" src="/images/elm-bedside-table.jpg" alt="Elm Bedside Table" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Elm Bedside Table</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">7 bids</span><span class="tile__ends">Ends in 9m 45s</span></div>
+    <p class="tile__body">One drawer and an open shelf, finished in hard wax oil.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0011" data-category="hand-tools" data-bid="40.00" data-currency="USD" data-ends="2026-11-13T20:58:28Z">
+    <img class="lot-image" src="/images/mortise-chisel-3-8-inch.jpg" alt="Mortise Chisel, 3/8 Inch" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Mortise Chisel, 3/8 Inch</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 9m 53s</span></div>
+    <p class="tile__body">Thick blade and a hooped handle made for mallet work.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0003" data-category="cabinets-storage" data-bid="570.00" data-currency="USD" data-ends="2026-11-13T20:58:39Z">
+    <img class="lot-image" src="/images/painted-pine-kitchen-hutch.jpg" alt="Painted Pine Kitchen Hutch" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Painted Pine Kitchen Hutch</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">7 bids</span><span class="tile__ends">Ends in 10m 5s</span></div>
+    <p class="tile__body">Open plate rack above, two cupboards below.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0005" data-category="hand-tools" data-bid="27.00" data-currency="USD" data-ends="2026-11-13T20:58:48Z">
+    <img class="lot-image" src="/images/card-scraper-set-with-burnisher.jpg" alt="Card Scraper Set with Burnisher" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Card Scraper Set with Burnisher</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 10m 14s</span></div>
+    <p class="tile__body">Three scrapers and a hardened burnisher for glassy surfaces.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0027" data-category="lumber" data-bid="76.00" data-currency="USD" data-ends="2026-11-13T20:58:51Z">
+    <img class="lot-image" src="/images/ash-bending-stock-for-chairs.jpg" alt="Ash Bending Stock for Chairs" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Ash Bending Stock for Chairs</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">10 bids</span><span class="tile__ends">Ends in 10m 16s</span></div>
+    <p class="tile__body">Straight-grained green ash, split from the log for steam bending.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0018" data-category="cabinets-storage" data-bid="165.00" data-currency="USD" data-ends="2026-11-13T20:58:58Z">
+    <img class="lot-image" src="/images/jewelry-box-with-lift-out-tray.jpg" alt="Jewelry Box with Lift-Out Tray" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Jewelry Box with Lift-Out Tray</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 10m 23s</span></div>
+    <p class="tile__body">Felt-lined, with a lift-out ring tray and a brass hinge.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0014" data-category="hand-tools" data-bid="40.00" data-currency="USD" data-ends="2026-11-13T20:59:26Z">
+    <img class="lot-image" src="/images/joiner-mallet-with-hardwood-head.jpg" alt="Joiner Mallet with Hardwood Head" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Joiner Mallet with Hardwood Head</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 10m 52s</span></div>
+    <p class="tile__body">Dense, heavy head and a tapered handle that never flies off.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0004" data-category="power-tools" data-bid="70.00" data-currency="USD" data-ends="2026-11-13T20:59:28Z">
+    <img class="lot-image" src="/images/variable-speed-jigsaw.jpg" alt="Variable-Speed Jigsaw" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Variable-Speed Jigsaw</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">5 bids</span><span class="tile__ends">Ends in 10m 53s</span></div>
+    <p class="tile__body">Orbital action, bevel base and a dozen spare blades.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0043" data-category="chairs-stools" data-bid="430.00" data-currency="USD" data-ends="2026-11-13T20:59:32Z">
+    <img class="lot-image" src="/images/windsor-chair-in-ash-and-elm.jpg" alt="Windsor Chair in Ash and Elm" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Windsor Chair in Ash and Elm</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">8 bids</span><span class="tile__ends">Ends in 10m 58s</span></div>
+    <p class="tile__body">Steam-bent bow back, hand-shaped seat and turned legs.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0033" data-category="power-tools" data-bid="45.00" data-currency="USD" data-ends="2026-11-13T20:59:44Z">
+    <img class="lot-image" src="/images/detail-palm-sander.jpg" alt="Detail Palm Sander" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Detail Palm Sander</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 11m 10s</span></div>
+    <p class="tile__body">Triangle pad for corners and tight spots. Light and quiet.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0022" data-category="tables" data-bid="450.00" data-currency="USD" data-ends="2026-11-13T21:00:01Z">
+    <img class="lot-image" src="/images/quartersawn-oak-hall-console.jpg" alt="Quartersawn Oak Hall Console" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Quartersawn Oak Hall Console</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">6 bids</span><span class="tile__ends">Ends in 11m 27s</span></div>
+    <p class="tile__body">Narrow, with a lower shelf and through-tenons.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0064" data-category="cabinets-storage" data-bid="360.00" data-currency="USD" data-ends="2026-11-13T21:00:07Z">
+    <img class="lot-image" src="/images/walnut-wall-cabinet-with-glass-door.jpg" alt="Walnut Wall Cabinet with Glass Door" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Walnut Wall Cabinet with Glass Door</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 11m 33s</span></div>
+    <p class="tile__body">Hand-cut joinery and a wooden turn latch.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0030" data-category="power-tools" data-bid="170.00" data-currency="USD" data-ends="2026-11-13T21:00:44Z">
+    <img class="lot-image" src="/images/plunge-router-with-edge-guide.jpg" alt="Plunge Router with Edge Guide" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Plunge Router with Edge Guide</h3>
+    <div class="tile__meta"><span class="tile__category">Power Tools</span><span class="tile__bids">2 bids</span><span class="tile__ends">Ends in 12m 10s</span></div>
+    <p class="tile__body">Two horsepower, soft start and both collets included.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0044" data-category="hand-tools" data-bid="42.00" data-currency="USD" data-ends="2026-11-13T21:00:56Z">
+    <img class="lot-image" src="/images/japanese-pull-saw-ryoba-pattern.jpg" alt="Japanese Pull Saw, Ryoba Pattern" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Japanese Pull Saw, Ryoba Pattern</h3>
+    <div class="tile__meta"><span class="tile__category">Hand Tools</span><span class="tile__bids">3 bids</span><span class="tile__ends">Ends in 12m 21s</span></div>
+    <p class="tile__body">Rip teeth on one edge, crosscut on the other. Cuts on the pull stroke.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0066" data-category="tables" data-bid="270.00" data-currency="USD" data-ends="2026-11-13T21:01:06Z">
+    <img class="lot-image" src="/images/parquet-game-table.jpg" alt="Parquet Game Table" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Parquet Game Table</h3>
+    <div class="tile__meta"><span class="tile__category">Tables</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 12m 31s</span></div>
+    <p class="tile__body">Inlaid chessboard top and a drawer for the pieces.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0051" data-category="cabinets-storage" data-bid="490.00" data-currency="USD" data-ends="2026-11-13T21:01:14Z">
+    <img class="lot-image" src="/images/oak-machinist-s-tool-chest.jpg" alt="Oak Machinist&#39;s Tool Chest" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Oak Machinist&#39;s Tool Chest</h3>
+    <div class="tile__meta"><span class="tile__category">Cabinets &amp; Storage</span><span class="tile__bids">4 bids</span><span class="tile__ends">Ends in 12m 40s</span></div>
+    <p class="tile__body">Eleven felt-lined drawers and a lift-up lid.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0053" data-category="lumber" data-bid="81.00" data-currency="USD" data-ends="2026-11-13T21:01:23Z">
+    <img class="lot-image" src="/images/olive-wood-turning-blanks.jpg" alt="Olive Wood Turning Blanks" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Olive Wood Turning Blanks</h3>
+    <div class="tile__meta"><span class="tile__category">Lumber &amp; Live-Edge Slabs</span><span class="tile__bids">7 bids</span><span class="tile__ends">Ends in 12m 48s</span></div>
+    <p class="tile__body">Swirled, fragrant grain for pens, handles and small bowls.</p>
+  </article>
+  <article class="tile" data-lot="LOT-0067" data-category="chairs-stools" data-bid="45.00" data-currency="USD" data-ends="2026-11-13T21:03:05Z">
+    <img class="lot-image" src="/images/three-legged-milking-stool.jpg" alt="Three-Legged Milking Stool" loading="lazy" width="512" height="512">
+    <h3 class="tile__title">Three-Legged Milking Stool</h3>
+    <div class="tile__meta"><span class="tile__category">Chairs &amp; Stools</span><span class="tile__bids">0 bids</span><span class="tile__ends">Ends in 14m 30s</span></div>
+    <p class="tile__body">Never wobbles on an uneven floor. Oiled oak.</p>
+  </article>
+</main>
+</div>
+<footer class="site-footer">Gavel &amp; Grain Auctions is a fictional auction house for a scraping demo. Nothing here is for sale.</footer>
+<script>(function(){var root=document.documentElement,button=document.querySelector('.theme-switch');
+function setLabel(){button.textContent=root.dataset.theme==='dark'?'Light mode':'Dark mode'}
+setLabel();button.addEventListener('click',function(){var next=root.dataset.theme==='dark'?'light':'dark';
+root.dataset.theme=next;try{localStorage.setItem('theme',next)}catch(e){}setLabel()})})();</script>
+<script>(function(){
+var mode=document.body.dataset.live,onlyCategory=document.body.dataset.category||'',names=JSON.parse(document.body.dataset.categoryNames||'{}');
+if(mode!=='v1'&&mode!=='v2')return;
+var indicator=document.querySelector('.live-indicator'),MAX_SOLD=12;
+function usd(n){return '$'+Number(n).toFixed(2)}
+function bidsLabel(n){return n+(n===1?' bid':' bids')}
+function isoSeconds(iso){return iso.replace(/\.\d{3}Z$/,'Z')}
+function endsLabel(iso){var s=Math.round((new Date(iso)-Date.now())/1000);if(s<=0)return 'Closing';
+var m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return 'Ends in '+h+'h '+(m%60)+'m';if(m>0)return 'Ends in '+m+'m '+(s%60)+'s';return 'Ends in '+s+'s'}
+function find(id){return document.querySelector((mode==='v1'?'li.lot':'article.tile')+'[data-lot="'+id+'"]')}
+function pulse(el,cls,ms){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(function(){el.classList.remove(cls)},ms)}
+function setText(el,sel,text){var target=el.querySelector(sel);if(target)target.textContent=text}
+function updateLot(lot){var el=find(lot.id);if(!el)return;
+if(mode==='v1'){var bid=el.querySelector('.lot-bid');if(bid&&bid.textContent.charAt(0)==='$')bid.textContent=usd(lot.currentBid)}
+else{el.dataset.bid=Number(lot.currentBid).toFixed(2)}
+setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));pulse(el,'flash',1400)}
+function buildLot(lot){var el;if(mode==='v1'){el=document.createElement('li');el.className='lot';
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="lot-title"></h3><span class="lot-bid"></span><span class="lot-bids"></span><time class="lot-ends"></time><p class="lot-description"></p>';
+setText(el,'.lot-title',lot.title);setText(el,'.lot-bid',usd(lot.currentBid));setText(el,'.lot-description',lot.description);
+var time=el.querySelector('time');time.dateTime=isoSeconds(lot.endsAt);time.textContent=endsLabel(lot.endsAt)}
+else{el=document.createElement('article');el.className='tile';el.dataset.bid=Number(lot.currentBid).toFixed(2);el.dataset.currency=lot.currency;el.dataset.ends=isoSeconds(lot.endsAt);
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="tile__title"></h3><div class="tile__meta"><span class="tile__category"></span><span class="tile__bids"></span><span class="tile__ends"></span></div><p class="tile__body"></p>';
+setText(el,'.tile__title',lot.title);setText(el,'.tile__body',lot.description);
+setText(el,'.tile__category',names[lot.category]||lot.category)}
+var image=el.querySelector('.lot-image');image.src=lot.image||'/images/placeholder.svg';image.alt=lot.title;
+el.dataset.lot=lot.id;el.dataset.category=lot.category;setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));return el}
+function getEnds(el){return mode==='v1'?(el.querySelector('time')||{}).dateTime||'':el.dataset.ends||''}
+function addLot(lot){if(find(lot.id)||(onlyCategory&&lot.category!==onlyCategory))return;
+var list=mode==='v1'?document.querySelector('section.category[data-category="'+lot.category+'"] ul.lot-list'):document.querySelector('main.auction-grid');if(!list)return;
+var el=buildLot(lot),ends=isoSeconds(lot.endsAt),before=null;
+for(var i=0;i<list.children.length;i++){if(getEnds(list.children[i])>ends){before=list.children[i];break}}
+list.insertBefore(el,before);pulse(el,'is-new',5000);changeCount(1)}
+function addSold(lot){var list=document.querySelector(mode==='v1'?'ol.sold-list':'.ticker');if(!list)return;
+var item=document.createElement(mode==='v1'?'li':'span');
+if(mode==='v1'){item.className='sold-item';item.innerHTML='<span class="sold-title"></span><span class="sold-price"></span>';
+setText(item,'.sold-title',lot.title);setText(item,'.sold-price','Sold '+usd(lot.soldPrice))}
+else{item.className='ticker__item';item.textContent=lot.title+' \u00b7 '+usd(lot.soldPrice)}
+list.insertBefore(item,list.firstChild);pulse(item,'is-new',3000);while(list.children.length>MAX_SOLD)list.removeChild(list.lastChild);
+var empty=document.querySelector('.sold-empty');if(empty)empty.remove()}
+function sellLot(lot){var el=find(lot.id);if(el){el.classList.add('is-sold');el.dataset.soldPrice=usd(lot.soldPrice);
+setTimeout(function(){el.remove()},2600);changeCount(-1)}addSold(lot)}
+function changeCount(delta){var stat=document.querySelector('.stat-open');if(stat)stat.textContent=String(Number(stat.textContent)+delta)}
+setInterval(function(){var now=Date.now();
+document.querySelectorAll(mode==='v1'?'li.lot':'article.tile').forEach(function(el){var ends=getEnds(el);if(!ends)return;
+var left=new Date(ends)-now;el.classList.toggle('ending',left<60000);
+if(mode==='v1')setText(el,'time.lot-ends',endsLabel(ends));else setText(el,'.tile__ends',endsLabel(ends))})},1000);
+function connect(){var socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+socket.onopen=function(){indicator.classList.add('on');indicator.textContent='Live'};
+socket.onclose=function(){indicator.classList.remove('on');indicator.textContent='Reconnecting';setTimeout(connect,2000)};
+socket.onmessage=function(event){var message=JSON.parse(event.data);
+if(message.type==='lot')updateLot(message.lot);else if(message.type==='sold')sellLot(message.lot);else if(message.type==='new')addLot(message.lot)}}
+connect()})();</script>
+</body>
+</html>

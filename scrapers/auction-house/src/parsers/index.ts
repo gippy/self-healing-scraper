@@ -68,8 +68,8 @@ function parseStatus(value: string, classes: string, id: string): string {
 /** Reads every open-lot card from the auction index (or one of its category pages). */
 export function parse(raw: string, url: string): Item[] {
   const $ = load(raw);
-  // Select every list child, not only .lot, so a broken card cannot disappear silently.
-  const listings = $('main .lot-list > li').toArray();
+  // Select every listing child in either layout, so a broken card cannot disappear silently.
+  const listings = $('main .lot-list > li, main.auction-grid > *').toArray();
   if (listings.length === 0) throw new ParseError(`No auction listings found at ${url}`);
 
   const seenIds = new Set<string>();
@@ -79,14 +79,23 @@ export function parse(raw: string, url: string): Item[] {
     if (seenIds.has(id)) throw new ParseError(`Duplicate listing id "${id}"`);
     seenIds.add(id);
 
-    const title = requiredText(lot.find('.lot-title').first().text(), 'title', id);
+    const isTile = lot.hasClass('tile');
+    const titleSelector = isTile ? '.tile__title' : '.lot-title';
+    const bidsSelector = isTile ? '.tile__bids' : '.lot-bids';
+    const title = requiredText(lot.find(titleSelector).first().text(), 'title', id);
     const category = requiredText(lot.attr('data-category'), 'category', id);
-    const price = parsePrice(requiredText(lot.find('.lot-bid').first().text(), 'price', id), id);
-    const bids = parseBids(requiredText(lot.find('.lot-bids').first().text(), 'bid count', id), id);
+    const price = isTile
+      ? parsePrice(
+          `${requiredText(lot.attr('data-currency'), 'currency', id)} ${requiredText(lot.attr('data-bid'), 'price', id)}`,
+          id,
+        )
+      : parsePrice(requiredText(lot.find('.lot-bid').first().text(), 'price', id), id);
+    const bids = parseBids(requiredText(lot.find(bidsSelector).first().text(), 'bid count', id), id);
 
-    const endElement = lot.find('time.lot-ends').first();
+    const endElement = lot.find(isTile ? '.tile__ends' : 'time.lot-ends').first();
     const status = parseStatus(requiredText(endElement.text(), 'status', id), lot.attr('class') ?? '', id);
-    const endsAt = parseEndTime(requiredText(endElement.attr('datetime'), 'end time', id), id);
+    const endTime = isTile ? lot.attr('data-ends') : endElement.attr('datetime');
+    const endsAt = parseEndTime(requiredText(endTime, 'end time', id), id);
 
     return { id, title, category, price, bids, status, endsAt };
   });
