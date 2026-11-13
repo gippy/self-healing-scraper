@@ -124,7 +124,10 @@ async function build(request: CreateRequest, emit: Emit, config: FactoryConfig):
             return stop('needs_human', `The prompt guard ${guard.verdict === 'flagged' ? 'flagged' : 'could not check'} the page, so no model reads it.`);
         }
     }
-    const title = /<title>([^<]*)<\/title>/i.exec(pages[0] ?? '')?.[1]?.trim() ?? '(no title)';
+    const title = (/<title>([^<]*)<\/title>/i.exec(pages[0] ?? '')?.[1]?.trim() ?? '(no title)')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'");
     step('investigate', 'done', `Fetched "${title}" twice through ${via} (${Math.round((pages[0]?.length ?? 0) / 1024)} KB)`, { url: request.url, via, title });
 
     // 2. A new scraper folder from the template, in a fresh worktree of the monorepo.
