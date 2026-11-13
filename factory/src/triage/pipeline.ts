@@ -188,7 +188,7 @@ export async function runPipeline(start: IssueInfo | { id: string }, origin: Ori
     const explainMs = Date.now() - explainStarted;
     emit('triage', 'started', 'Asking Gemini Decision 1 how severe and how fixable this is…', { explanation, explainMs });
     const triage = await deps.askTriage(buildTriageInput(issue, scraper, explanation, markdown, logs, attachment));
-    const decision = decide(verdict, triage);
+    const decision = decide(verdict, triage, issue.level);
     if (triage) {
         emit(
             'triage',

@@ -27,7 +27,11 @@ export function topSeverity(severity: Record<Severity, number>): Severity {
 
 const pct = (p: number) => `${Math.round(p * 100)}%`;
 
-export function decide(guard: GuardVerdict, triage: { severity: Record<Severity, number>; fixable: number } | undefined): Decision {
+export function decide(
+    guard: GuardVerdict,
+    triage: { severity: Record<Severity, number>; fixable: number } | undefined,
+    level?: string,
+): Decision {
     if (guard === 'flagged') {
         return { route: 'needs_human', priority: 'high', reason: 'The prompt guard flagged the evidence, so no model may read it.' };
     }
@@ -37,7 +41,11 @@ export function decide(guard: GuardVerdict, triage: { severity: Record<Severity,
     if (!triage) {
         return { route: 'needs_human', priority: 'high', reason: 'Gemini Decision 1 did not answer; escalating instead of dropping the issue.' };
     }
-    const severity = topSeverity(triage.severity);
+    // A scraper error (a parser that read nothing) is never benign; only warnings, like an upstream retry that
+    // recovered, can be. Then the more likely of minor and critical decides.
+    const isError = level === 'error' || level === 'fatal';
+    let severity = topSeverity(triage.severity);
+    if (severity === 'benign' && isError) severity = triage.severity.critical >= triage.severity.minor ? 'critical' : 'minor';
     const priority = PRIORITY[severity];
     if (severity === 'benign') {
         return { route: 'done', priority, severity, reason: `Gemini Decision 1 rates it benign (${pct(triage.severity.benign)}); nothing to fix.` };

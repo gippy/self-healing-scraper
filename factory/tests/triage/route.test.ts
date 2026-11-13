@@ -54,3 +54,12 @@ test('ties go to the more severe option', () => {
     assert.equal(topSeverity({ benign: 0.2, minor: 0.4, critical: 0.4 }), 'critical');
     assert.equal(topSeverity({ benign: 0.5, minor: 0.3, critical: 0.2 }), 'benign');
 });
+
+test('a scraper error is never routed as benign; a warning can be', () => {
+    const coinFlip = { severity: { benign: 0.53, minor: 0.27, critical: 0.2 }, fixable: 0.95 };
+    const error = decide('clean', coinFlip, 'error');
+    assert.equal(error.route, 'factory');
+    assert.equal(error.severity, 'minor');
+    assert.equal(decide('clean', coinFlip, 'warning').route, 'done');
+    assert.equal(decide('clean', coinFlip).route, 'done');
+});
