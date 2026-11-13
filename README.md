@@ -29,6 +29,7 @@ factory/  ◀──────────────────────�
 | [`auction-house/`](auction-house/) | A live auction site: categories, bids that keep rising, lots selling, new lots appearing. State in **Tiger Data** (Postgres + TimescaleDB hypertable of bids), a simulation changing it every 2 s, server-rendered and updated live over a WebSocket. Its design can be switched on the fly (a redesign, new currency formats, a login wall, a CAPTCHA, a prompt-injection lot) to break scrapers on cue. Runs on **DigitalOcean App Platform**. |
 | [`scraper-template/`](scraper-template/) | The runtime every scraper shares: fetch through **Bright Data**'s Web Unlocker, parse, write to **Snowflake**, report parser failures to **Sentry** with the raw page attached, pause and resume. The factory writes only `src/parsers/`. |
 | `scrapers/<name>/` | Scrapers the factory built and deployed, one **DigitalOcean** app each. |
+| [`analytics/`](analytics/) | What the data becomes. In **Snowflake**, a dynamic table turns every scrape into one live price per lot with its growth. In **Tiger Data**, a continuous aggregate keeps each lot's price per minute from the bids hypertable. |
 | [`factory/`](factory/) | The monitor, the factory and the dashboard. |
 
 ## How the factory stays honest
