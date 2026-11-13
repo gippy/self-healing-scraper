@@ -69,24 +69,23 @@ export function resumeScraper(name: string): Promise<BreakerResult> {
     return call(name, 'resume', {});
 }
 
-// `GET {url}/items`: an array of items, or an object that may carry `items` and `paused`.
-const itemsSchema = z.union([
-    z.array(z.unknown()),
-    z.looseObject({ items: z.array(z.unknown()).optional(), paused: z.boolean().optional() }),
-]);
+// `GET {url}/status` from the scraper template: whether it is paused, and its last poll.
+const statusSchema = z.looseObject({
+    paused: z.boolean().optional(),
+    lastPoll: z.looseObject({ items: z.number().optional() }).nullish(),
+});
 
 async function checkScraper(scraper: Scraper): Promise<ScraperStatus> {
     const base: ScraperStatus = { name: scraper.name, url: scraper.url, targetUrl: scraper.targetUrl, up: false };
     if (fake()) return { ...base, up: true };
     try {
-        const response = await fetch(new URL('items', scraper.url.endsWith('/') ? scraper.url : `${scraper.url}/`), {
+        const response = await fetch(new URL('status', scraper.url.endsWith('/') ? scraper.url : `${scraper.url}/`), {
             signal: AbortSignal.timeout(4_000),
         });
         if (!response.ok) return { ...base, error: `HTTP ${response.status}` };
-        const parsed = itemsSchema.safeParse(await response.json());
-        if (!parsed.success) return { ...base, up: true, error: 'unexpected /items answer' };
-        if (Array.isArray(parsed.data)) return { ...base, up: true, items: parsed.data.length };
-        return { ...base, up: true, items: parsed.data.items?.length, paused: parsed.data.paused };
+        const parsed = statusSchema.safeParse(await response.json());
+        if (!parsed.success) return { ...base, up: true, error: 'unexpected /status answer' };
+        return { ...base, up: true, items: parsed.data.lastPoll?.items, paused: parsed.data.paused };
     } catch (error) {
         return { ...base, error: (error as Error).name === 'TimeoutError' ? 'no answer in 4 s' : (error as Error).message };
     }

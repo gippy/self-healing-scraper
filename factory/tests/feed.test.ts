@@ -50,8 +50,10 @@ test('an unregistered scraper or a failing call comes back as { ok: false }, nev
     assert.equal((await pauseScraper('auction-house', 'r', 'FEED-1')).ok, false);
 });
 
-test('status reads /items; failures are reported, not thrown', async () => {
-    mock.method(globalThis, 'fetch', async () => Response.json({ items: [{ id: 'LOT-0001' }, { id: 'LOT-0002' }], paused: true }));
+test('status reads /status; failures are reported, not thrown', async () => {
+    const fetchMock = mock.method(globalThis, 'fetch', async () =>
+        Response.json({ scraper: 'auction-house', paused: true, lastPoll: { at: '2026-11-13T21:00:00Z', ok: true, items: 2 } }),
+    );
     const [status] = await scraperStatuses(0);
     assert.deepEqual(status, {
         name: 'auction-house',
@@ -61,6 +63,7 @@ test('status reads /items; failures are reported, not thrown', async () => {
         items: 2,
         paused: true,
     });
+    assert.match(String(fetchMock.mock.calls[0]?.arguments[0]), /\/status$/);
     mock.restoreAll();
     mock.method(globalThis, 'fetch', async () => {
         throw new TypeError('fetch failed');
