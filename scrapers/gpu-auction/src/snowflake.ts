@@ -54,7 +54,7 @@ export function buildInsert(scraper: string, items: Item[], scrapedAt: string): 
   ]);
   const sqlText = `INSERT INTO SCRAPED_ITEMS (${COLUMNS})
 SELECT column1, column2, column3, column4, column5, column6, column7, column8,
-  TRY_TO_TIMESTAMP_TZ(column9), TO_TIMESTAMP_TZ(column10), PARSE_JSON(column11)
+  TRY_TO_TIMESTAMP_TZ(column9::VARCHAR), TO_TIMESTAMP_TZ(column10), PARSE_JSON(column11)
 FROM VALUES ${items.map(() => ROW_PLACEHOLDERS).join(', ')}`;
   return { sqlText, binds };
 }

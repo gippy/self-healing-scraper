@@ -46,6 +46,9 @@ describe('Snowflake sink', () => {
 
     assert.equal((sqlText.match(/\?/g) ?? []).length, 22);
     assert.match(sqlText, /PARSE_JSON\(column11\)/);
+    // A batch where no item has an end time binds only nulls, and Snowflake rejects TRY_TO_TIMESTAMP_TZ on an
+    // untyped null column ("TRY_CAST cannot be used with arguments of types NULL"); the VARCHAR cast types it.
+    assert.match(sqlText, /TRY_TO_TIMESTAMP_TZ\(column9::VARCHAR\)/);
     assert.deepEqual(binds.slice(0, 11), [
       'auction-house',
       'LOT-0001',
