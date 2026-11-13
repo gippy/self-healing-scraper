@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live auctions | Silicon &amp; Gavel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap">
+<script>(function(){var t;try{t=localStorage.getItem('theme')}catch(e){}
+if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+document.documentElement.dataset.theme=t})();</script>
+<style>
+:root{--bg:#f1f1ec;--surface:#fff;--text:#0b0c0d;--muted:#5d6166;--line:#0b0c0d;--grid:#d6d6d0;--accent:#00a35c;--accent-2:#e35d00;--accent-soft:#c9f2dc;--ok:#00a35c;--bad:#e5132b;--shadow:none}
+:root[data-theme=dark]{--bg:#050607;--surface:#0b0e11;--text:#e8ecef;--muted:#7c858e;--line:#2d343b;--grid:#1a1f24;--accent:#00ff85;--accent-2:#ffb000;--accent-soft:#073d24;--ok:#00ff85;--bad:#ff3355;--shadow:none}
+*,*::before,*::after{box-sizing:border-box;border-radius:0 !important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+input,button,select,textarea{font-family:inherit}
+a{color:inherit}
+.site-header{position:sticky;top:0;z-index:10;display:flex;align-items:stretch;background:var(--surface);border-bottom:2px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:12px 18px;font-weight:800;font-size:15px;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;white-space:nowrap;border-right:1px solid var(--line)}
+.brand-mark{display:grid;place-items:center;width:30px;height:30px;background:var(--accent);color:#000;font-size:11px;font-weight:800}
+.category-nav{display:flex;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.category-nav a{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;white-space:nowrap;border-right:1px solid var(--grid)}
+.category-nav a:hover,.category-nav a.active{background:var(--text);color:var(--bg)}
+.live-indicator{display:flex;align-items:center;gap:8px;padding:0 16px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);white-space:nowrap;border-left:1px solid var(--line)}
+.live-indicator::before{content:"";width:8px;height:8px;background:var(--muted)}
+.live-indicator.on{color:var(--accent)}
+.live-indicator.on::before{background:var(--accent);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+.theme-switch{padding:0 16px;border:0;border-left:1px solid var(--line);background:transparent;color:var(--text);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap}
+.theme-switch:hover{background:var(--text);color:var(--bg)}
+.page{max-width:1440px;margin:0 auto;padding:24px}
+.site-footer{max-width:1440px;margin:0 auto;padding:20px 24px;color:var(--muted);font-size:12px;border-top:1px solid var(--grid)}
+@media (max-width:640px){.site-header{flex-wrap:wrap}.category-nav{order:3;flex-basis:100%;border-top:1px solid var(--grid)}.category-nav a{padding:10px 12px}.page{padding:16px}}
+.hero{display:grid;grid-template-columns:1fr auto;align-items:end;gap:20px;margin:0 0 20px;padding-bottom:16px;border-bottom:2px solid var(--line)}
+.hero-title{margin:0;font-size:clamp(28px,3.6vw,46px);font-weight:800;line-height:1;letter-spacing:-.04em;text-transform:uppercase}
+.hero-title::before{content:"> ";color:var(--accent)}
+.hero-text{margin:10px 0 0;color:var(--muted);font-size:14px}
+.hero-stats{display:flex;border:1px solid var(--line)}
+.stat{display:flex;flex-direction:column;min-width:130px;padding:10px 16px;background:var(--surface);border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat-open,.stat-value{font-size:30px;font-weight:800;color:var(--accent)}
+.stat-label{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.recently-sold{display:flex;align-items:stretch;margin:0 0 28px;background:#000;color:#e8ecef;border:1px solid var(--line);overflow:hidden}
+.strip-title{display:flex;align-items:center;margin:0;padding:0 14px;background:var(--accent-2);color:#000;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.sold-list{display:flex;margin:0;padding:0;list-style:none;overflow-x:auto;scrollbar-width:none}
+.sold-item{display:flex;gap:10px;align-items:baseline;padding:10px 16px;border-right:1px solid #2d343b;white-space:nowrap;font-size:13px}
+.sold-item.is-new{animation:tick 1.2s ease-out}
+.sold-price{color:#00ff85;font-weight:800}
+.sold-empty{margin:0;padding:10px 16px;color:#7c858e;font-size:13px}
+.category{margin:0 0 32px}
+.category-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:2px solid var(--line)}
+.category-name{margin:0;font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.category-name::before{content:"// ";color:var(--accent)}
+.category-link{color:var(--accent);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.06em;text-decoration:none}
+.lot-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));border-left:1px solid var(--line)}
+.lot{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"image image" "title title" "desc desc" "bid bid" "bids ends";gap:4px 10px;padding:0 14px 14px;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden}
+.lot .lot-image{grid-area:image;display:block;width:calc(100% + 28px);height:auto;aspect-ratio:4/3;margin:0 -14px 10px;object-fit:cover;background:var(--grid);border-bottom:1px solid var(--line)}
+.lot-title{grid-area:title;margin:0;font-size:14px;font-weight:700;line-height:1.3}
+.lot-description{grid-area:desc;margin:0 0 8px;color:var(--muted);font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lot-bid{grid-area:bid;font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--accent)}
+.lot-bids{grid-area:bids;align-self:center;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.lot-ends{grid-area:ends;padding:3px 8px;border:1px solid var(--accent-2);color:var(--accent-2);font-size:12px;font-weight:800;white-space:nowrap}
+.lot.ending .lot-ends{background:var(--bad);border-color:var(--bad);color:#fff;animation:blink 1s steps(2) infinite}
+.lot.flash{animation:flash 1.2s ease-out}
+.lot.flash .lot-bid{animation:pop .4s ease-out}
+.lot.is-new{animation:arrive .6s ease-out;outline:2px solid var(--accent);outline-offset:-2px}
+.lot.is-new::before{content:"NEW";position:absolute;top:10px;right:10px;z-index:1;padding:2px 6px;background:var(--accent);color:#000;font-size:11px;font-weight:800;letter-spacing:.08em}
+.lot.is-sold{animation:leave 2.6s ease-in forwards}
+.lot.is-sold::after{content:"SOLD " attr(data-sold-price);position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 78%,transparent);color:var(--accent);font-size:22px;font-weight:800;letter-spacing:.04em}
+.promo-banner{position:relative;margin:0 0 20px;padding:14px 18px 24px;background:#ffd400;color:#000;border:2px solid #000;font-size:clamp(15px,1.7vw,21px);font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+.promo-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:9px;background:repeating-linear-gradient(-45deg,#000 0 10px,#ffd400 10px 20px)}
+.promo-banner strong{margin-right:12px;padding:2px 8px;background:#000;color:#ffd400}
+.lot-bid del{margin-right:8px;color:var(--muted);font-size:14px;font-weight:600;text-decoration-thickness:2px}
+.lot-bid ins{text-decoration:none;color:var(--bad)}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
+@keyframes pop{0%{transform:translateY(-4px)}100%{transform:none}}
+@keyframes arrive{0%{opacity:0}100%{opacity:1}}
+@keyframes leave{0%,70%{opacity:1}100%{opacity:0}}
+@keyframes tick{0%{background:var(--accent-2);color:#000}100%{background:transparent}}
+</style>
+</head>
+<body data-live="v1" data-category-names="{&quot;flagship-gaming&quot;:&quot;Flagship Gaming&quot;,&quot;datacenter&quot;:&quot;Datacenter Accelerators&quot;,&quot;workstation&quot;:&quot;Workstation Cards&quot;,&quot;retro&quot;:&quot;Retro &amp; Collectible&quot;,&quot;mining-survivors&quot;:&quot;Mining Survivors&quot;,&quot;low-profile&quot;:&quot;Mini &amp; Low-Profile&quot;}">
+<header class="site-header">
+  <a class="brand" href="/"><span class="brand-mark">G&amp;G</span>Silicon &amp; Gavel</a>
+  <nav class="category-nav"><a href="/" class="active">All lots</a><a href="/c/flagship-gaming">Flagship Gaming</a><a href="/c/datacenter">Datacenter Accelerators</a><a href="/c/workstation">Workstation Cards</a><a href="/c/retro">Retro &amp; Collectible</a><a href="/c/mining-survivors">Mining Survivors</a><a href="/c/low-profile">Mini &amp; Low-Profile</a></nav>
+  <span class="live-indicator">Connecting</span>
+  <button class="theme-switch" type="button">Theme</button>
+</header>
+<main class="page">
+<section class="hero">
+  <div><h1 class="hero-title">Live auctions</h1><p class="hero-text">GPUs, accelerators and other space heaters. Bids land every few seconds, lots close on the clock.</p></div>
+  <div class="hero-stats"><div class="stat"><span class="stat-open">60</span><span class="stat-label">lots open</span></div><div class="stat"><span class="stat-value">6</span><span class="stat-label">categories</span></div></div>
+</section>
+<section class="recently-sold">
+  <h2 class="strip-title">Recently sold</h2>
+  <ol class="sold-list"><li class="sold-item" data-lot="LOT-0062"><span class="sold-title">Waitlist Skipper WS-96 96GB</span><span class="sold-price">Sold $26500.00</span></li><li class="sold-item" data-lot="LOT-0056"><span class="sold-title">Sag Bracket Special 20GB</span><span class="sold-price">Sold $2350.00</span></li><li class="sold-item" data-lot="LOT-0016"><span class="sold-title">Home Server Helper 4GB</span><span class="sold-price">Sold $220.00</span></li><li class="sold-item" data-lot="LOT-0034"><span class="sold-title">Dual-Head Dreamer 64MB</span><span class="sold-price">Sold $95.00</span></li><li class="sold-item" data-lot="LOT-0047"><span class="sold-title">ISA Graphics Adapter, 256KB</span><span class="sold-price">Sold $160.00</span></li><li class="sold-item" data-lot="LOT-0003"><span class="sold-title">Low-Profile Lab Card 12GB</span><span class="sold-price">Sold $570.00</span></li><li class="sold-item" data-lot="LOT-0021"><span class="sold-title">Ludicrous Mode LM-80 32GB</span><span class="sold-price">Sold $3550.00</span></li><li class="sold-item" data-lot="LOT-0045"><span class="sold-title">Dual-Slot Diplomat 40GB</span><span class="sold-price">Sold $3800.00</span></li><li class="sold-item" data-lot="LOT-0042"><span class="sold-title">ECC Everything E-32 32GB</span><span class="sold-price">Sold $3250.00</span></li><li class="sold-item" data-lot="LOT-0048"><span class="sold-title">Quiet Mode Qx 16GB</span><span class="sold-price">Sold $860.00</span></li><li class="sold-item" data-lot="LOT-0037"><span class="sold-title">Silicon Commemorative Die, Framed</span><span class="sold-price">Sold $205.00</span></li><li class="sold-item" data-lot="LOT-0043"><span class="sold-title">Merge Day Orphan 12GB</span><span class="sold-price">Sold $360.00</span></li></ol>
+</section>
+<section class="category" data-category="flagship-gaming">
+  <div class="category-head">
+    <h2 class="category-name">Flagship Gaming</h2>
+    <a class="category-link" href="/c/flagship-gaming">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0063" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/raytrace-royale-20gb-liquid-cooled.jpg" alt="Raytrace Royale 20GB, Liquid Cooled" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Raytrace Royale 20GB, Liquid Cooled</h3>
+      <span class="lot-bid">$1650.00</span>
+      <span class="lot-bids">4 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:41:29Z">Ends in 48s</time>
+      <p class="lot-description">Closed-loop cooler, quiet under load, slightly loud under scrutiny.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0038" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/melted-connector-survivor-24gb.jpg" alt="Melted Connector Survivor 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Melted Connector Survivor 24GB</h3>
+      <span class="lot-bid">$2300.00</span>
+      <span class="lot-bids">11 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:29Z">Ends in 1m 49s</time>
+      <p class="lot-description">New power cable included. Old one framed separately.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0025" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/frame-gen-phantom-16gb.jpg" alt="Frame Gen Phantom 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Frame Gen Phantom 16GB</h3>
+      <span class="lot-bid">$840.00</span>
+      <span class="lot-bids">3 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:43:39Z">Ends in 2m 58s</time>
+      <p class="lot-description">Generates three frames for every real one. Feels fast anyway.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0052" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/benchmark-baron-24gb-open-box.jpg" alt="Benchmark Baron 24GB, Open Box" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Benchmark Baron 24GB, Open Box</h3>
+      <span class="lot-bid">$2650.00</span>
+      <span class="lot-bids">13 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:05Z">Ends in 4m 24s</time>
+      <p class="lot-description">Ran one benchmark, posted the score, went back in the box.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0005" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/launch-day-unicorn-24gb.jpg" alt="Launch Day Unicorn 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Launch Day Unicorn 24GB</h3>
+      <span class="lot-bid">$2700.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:08Z">Ends in 4m 28s</time>
+      <p class="lot-description">Bought at launch after a 9-hour queue. Seller needs closure.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0032" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/shader-storm-12gb.jpg" alt="Shader Storm 12GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Shader Storm 12GB</h3>
+      <span class="lot-bid">$720.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:48Z">Ends in 5m 7s</time>
+      <p class="lot-description">Great at 1440p. Bought for gaming, used for spreadsheets.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0072" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/ludicrous-mode-lm-80-32gb.jpg" alt="Ludicrous Mode LM-80 32GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Ludicrous Mode LM-80 32GB</h3>
+      <span class="lot-bid">$2200.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:47:28Z">Ends in 6m 48s</time>
+      <p class="lot-description">Needs a 1200 W supply and a long talk with your landlord.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0065" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/thermal-throttle-tx-9000-24gb.jpg" alt="Thermal Throttle TX-9000 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Thermal Throttle TX-9000 24GB</h3>
+      <span class="lot-bid">$1550.00</span>
+      <span class="lot-bids">1 bid</span>
+      <time class="lot-ends" datetime="2026-11-13T21:50:23Z">Ends in 9m 43s</time>
+      <p class="lot-description">Four slots wide, three fans, one very warm room. Box included.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0069" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/framerate-fury-x-16gb.jpg" alt="Framerate Fury X 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Framerate Fury X 16GB</h3>
+      <span class="lot-bid">$1360.00</span>
+      <span class="lot-bids">4 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:52:08Z">Ends in 11m 28s</time>
+      <p class="lot-description">Runs every game at max settings and your power bill at max too.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0077" data-category="flagship-gaming">
+      <img class="lot-image" src="/images/gpu/quiet-mode-qx-16gb.jpg" alt="Quiet Mode Qx 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Quiet Mode Qx 16GB</h3>
+      <span class="lot-bid">$690.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:53:31Z">Ends in 12m 51s</time>
+      <p class="lot-description">Zero-RPM fans at idle, jet engine at minute three.</p>
+    </li>
+  </ul>
+</section>
+<section class="category" data-category="datacenter">
+  <div class="category-head">
+    <h2 class="category-name">Datacenter Accelerators</h2>
+    <a class="category-link" href="/c/datacenter">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0064" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/bulk-batch-bb-32-32gb.jpg" alt="Bulk Batch BB-32 32GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Bulk Batch BB-32 32GB</h3>
+      <span class="lot-bid">$2600.00</span>
+      <span class="lot-bids">2 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:40:59Z">Ends in 19s</time>
+      <p class="lot-description">Older generation, still faster than your laptop at everything.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0004" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/h-adjacent-80gb-one-training-run.jpg" alt="H-Adjacent 80GB, One Training Run" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">H-Adjacent 80GB, One Training Run</h3>
+      <span class="lot-bid">$19300.00</span>
+      <span class="lot-bids">7 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:41:50Z">Ends in 1m 10s</time>
+      <p class="lot-description">Slightly used for one training run. The model was fine. Mostly.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0024" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/liquid-cooled-llm-lifter-120gb.jpg" alt="Liquid-Cooled LLM Lifter 120GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Liquid-Cooled LLM Lifter 120GB</h3>
+      <span class="lot-bid">$33500.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:43Z">Ends in 2m 3s</time>
+      <p class="lot-description">Cold plate attached. Coolant not included, puddle optional.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0058" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/evals-pending-ep-80-80gb.jpg" alt="Evals Pending EP-80 80GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Evals Pending EP-80 80GB</h3>
+      <span class="lot-bid">$18300.00</span>
+      <span class="lot-bids">4 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:50Z">Ends in 2m 10s</time>
+      <p class="lot-description">Trained something important. Results coming soon.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0051" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/inference-engine-ie-40-48gb.jpg" alt="Inference Engine IE-40 48GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Inference Engine IE-40 48GB</h3>
+      <span class="lot-bid">$9000.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:12Z">Ends in 3m 32s</time>
+      <p class="lot-description">Serves tokens all day. Has opinions about batch size.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0031" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/attention-is-all-it-had-141gb.jpg" alt="Attention Is All It Had 141GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Attention Is All It Had 141GB</h3>
+      <span class="lot-bid">$39750.00</span>
+      <span class="lot-bids">10 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:00Z">Ends in 4m 20s</time>
+      <p class="lot-description">Enough memory for a big context window and a bigger invoice.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0012" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/spot-instance-refugee-80gb.jpg" alt="Spot Instance Refugee 80GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Spot Instance Refugee 80GB</h3>
+      <span class="lot-bid">$18900.00</span>
+      <span class="lot-bids">12 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:47Z">Ends in 5m 6s</time>
+      <p class="lot-description">Pulled from a cloud that kept preempting it. Now free to roam.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0040" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/matrix-multiplier-mm-8-eight-pack.jpg" alt="Matrix Multiplier MM-8 Eight-Pack" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Matrix Multiplier MM-8 Eight-Pack</h3>
+      <span class="lot-bid">$43250.00</span>
+      <span class="lot-bids">7 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:49:20Z">Ends in 8m 39s</time>
+      <p class="lot-description">Eight accelerator modules on one baseboard. Forklift recommended.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0029" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/sparse-model-sparrow-24gb.jpg" alt="Sparse Model Sparrow 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Sparse Model Sparrow 24GB</h3>
+      <span class="lot-bid">$3650.00</span>
+      <span class="lot-bids">6 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:49:20Z">Ends in 8m 40s</time>
+      <p class="lot-description">Small, efficient and pretends it is a big model.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0078" data-category="datacenter">
+      <img class="lot-image" src="/images/gpu/waitlist-skipper-ws-96-96gb.jpg" alt="Waitlist Skipper WS-96 96GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Waitlist Skipper WS-96 96GB</h3>
+      <span class="lot-bid">$24000.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:51:18Z">Ends in 10m 37s</time>
+      <p class="lot-description">You would wait eight months for this. Or bid now.</p>
+    </li>
+  </ul>
+</section>
+<section class="category" data-category="workstation">
+  <div class="category-head">
+    <h2 class="category-name">Workstation Cards</h2>
+    <a class="category-link" href="/c/workstation">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0053" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/architect-edition-ae-24-24gb.jpg" alt="Architect Edition AE-24 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Architect Edition AE-24 24GB</h3>
+      <span class="lot-bid">$3100.00</span>
+      <span class="lot-bids">12 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:41:24Z">Ends in 43s</time>
+      <p class="lot-description">Came with a building. The building stayed.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0020" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/vfx-veteran-32gb.jpg" alt="VFX Veteran 32GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">VFX Veteran 32GB</h3>
+      <span class="lot-bid">$2950.00</span>
+      <span class="lot-bids">7 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:48Z">Ends in 2m 8s</time>
+      <p class="lot-description">Pulled from a render node after rendering 400 explosions.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0055" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/mid-tower-muse-16gb.jpg" alt="Mid-Tower Muse 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Mid-Tower Muse 16GB</h3>
+      <span class="lot-bid">$2050.00</span>
+      <span class="lot-bids">13 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:49Z">Ends in 2m 9s</time>
+      <p class="lot-description">Workstation card in a gamer card body. Midlife crisis.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0033" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/blower-bros-duo-pair-of-24gb.jpg" alt="Blower Bros Duo, Pair of 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Blower Bros Duo, Pair of 24GB</h3>
+      <span class="lot-bid">$4400.00</span>
+      <span class="lot-bids">12 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:38Z">Ends in 3m 58s</time>
+      <p class="lot-description">Two matched blower cards. Stack them, ignore the noise.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0071" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/compute-clerk-cc-10-10gb.jpg" alt="Compute Clerk CC-10 10GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Compute Clerk CC-10 10GB</h3>
+      <span class="lot-bid">$530.00</span>
+      <span class="lot-bids">1 bid</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:49Z">Ends in 4m 9s</time>
+      <p class="lot-description">Reliable, boring and loved by IT departments.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0061" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/viewport-virtuoso-vv-16-16gb.jpg" alt="Viewport Virtuoso VV-16 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Viewport Virtuoso VV-16 16GB</h3>
+      <span class="lot-bid">$1350.00</span>
+      <span class="lot-bids">3 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:51Z">Ends in 4m 11s</time>
+      <p class="lot-description">Spins huge assemblies smoothly. Sales demo unit.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0008" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/simulation-station-ss-64-64gb.jpg" alt="Simulation Station SS-64 64GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Simulation Station SS-64 64GB</h3>
+      <span class="lot-bid">$7100.00</span>
+      <span class="lot-bids">10 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:48Z">Ends in 5m 7s</time>
+      <p class="lot-description">Fluid dynamics, crash tests and the occasional weather model.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0006" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/quad-display-quill-8gb.jpg" alt="Quad Display Quill 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Quad Display Quill 8GB</h3>
+      <span class="lot-bid">$560.00</span>
+      <span class="lot-bids">11 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:51Z">Ends in 5m 10s</time>
+      <p class="lot-description">Drives four monitors for traders who need more red and green.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0028" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/medical-imaging-mi-48-48gb.jpg" alt="Medical Imaging MI-48 48GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Medical Imaging MI-48 48GB</h3>
+      <span class="lot-bid">$6100.00</span>
+      <span class="lot-bids">13 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:46:28Z">Ends in 5m 47s</time>
+      <p class="lot-description">Renders scans in real time. Retired from hospital duty.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0070" data-category="workstation">
+      <img class="lot-image" src="/images/gpu/render-farmhand-rf-24-24gb.jpg" alt="Render Farmhand RF-24 24GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Render Farmhand RF-24 24GB</h3>
+      <span class="lot-bid">$2400.00</span>
+      <span class="lot-bids">4 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:48:14Z">Ends in 7m 33s</time>
+      <p class="lot-description">Single-slot blower. Rendered three feature films and a cat video.</p>
+    </li>
+  </ul>
+</section>
+<section class="category" data-category="retro">
+  <div class="category-head">
+    <h2 class="category-name">Retro &amp; Collectible</h2>
+    <a class="category-link" href="/c/retro">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0022" data-category="retro">
+      <img class="lot-image" src="/images/gpu/mid-2000s-space-heater-512mb.jpg" alt="Mid-2000s Space Heater 512MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Mid-2000s Space Heater 512MB</h3>
+      <span class="lot-bid">$165.00</span>
+      <span class="lot-bids">8 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:41:05Z">Ends in 24s</time>
+      <p class="lot-description">Dual-slot pioneer. Heated a dorm room for four winters.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0013" data-category="retro">
+      <img class="lot-image" src="/images/gpu/golden-sample-gs-1gb-signed.jpg" alt="Golden Sample GS 1GB, Signed" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Golden Sample GS 1GB, Signed</h3>
+      <span class="lot-bid">$470.00</span>
+      <span class="lot-bids">11 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:41:40Z">Ends in 59s</time>
+      <p class="lot-description">Signed by an overclocking champion. Signature not overclocked.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0060" data-category="retro">
+      <img class="lot-image" src="/images/gpu/pass-through-3d-accelerator-4mb.jpg" alt="Pass-Through 3D Accelerator 4MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Pass-Through 3D Accelerator 4MB</h3>
+      <span class="lot-bid">$275.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:29Z">Ends in 1m 48s</time>
+      <p class="lot-description">Loopback cable included. Made polygons a big deal in 1997.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0074" data-category="retro">
+      <img class="lot-image" src="/images/gpu/isa-graphics-adapter-256kb.jpg" alt="ISA Graphics Adapter, 256KB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">ISA Graphics Adapter, 256KB</h3>
+      <span class="lot-bid">$80.00</span>
+      <span class="lot-bids">1 bid</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:32Z">Ends in 3m 52s</time>
+      <p class="lot-description">Sixteen colors at once. Pure luxury.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0011" data-category="retro">
+      <img class="lot-image" src="/images/gpu/first-programmable-shader-card-64mb.jpg" alt="First Programmable Shader Card 64MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">First Programmable Shader Card 64MB</h3>
+      <span class="lot-bid">$415.00</span>
+      <span class="lot-bids">8 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:06Z">Ends in 4m 26s</time>
+      <p class="lot-description">Historic. Ran a water demo that made people gasp.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0068" data-category="retro">
+      <img class="lot-image" src="/images/gpu/workstation-wonder-1999-32mb.jpg" alt="Workstation Wonder 1999 32MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Workstation Wonder 1999 32MB</h3>
+      <span class="lot-bid">$110.00</span>
+      <span class="lot-bids">3 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:46:23Z">Ends in 5m 43s</time>
+      <p class="lot-description">Professional OpenGL card from when 32 MB was enormous.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0001" data-category="retro">
+      <img class="lot-image" src="/images/gpu/laptop-graphics-module-1gb.jpg" alt="Laptop Graphics Module 1GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Laptop Graphics Module 1GB</h3>
+      <span class="lot-bid">$115.00</span>
+      <span class="lot-bids">5 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:47:08Z">Ends in 6m 28s</time>
+      <p class="lot-description">Laptop graphics module, removed from a laptop that weighed 5 kg.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0049" data-category="retro">
+      <img class="lot-image" src="/images/gpu/bridge-cable-twins-linked-pair.jpg" alt="Bridge Cable Twins, Linked Pair" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Bridge Cable Twins, Linked Pair</h3>
+      <span class="lot-bid">$310.00</span>
+      <span class="lot-bids">12 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:48:11Z">Ends in 7m 31s</time>
+      <p class="lot-description">Two linked cards that were faster in exactly three games.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0075" data-category="retro">
+      <img class="lot-image" src="/images/gpu/polygon-pioneer-12mb.jpg" alt="Polygon Pioneer 12MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Polygon Pioneer 12MB</h3>
+      <span class="lot-bid">$210.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:48:21Z">Ends in 7m 41s</time>
+      <p class="lot-description">Original box, manual and a demo CD of a game you loved.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0027" data-category="retro">
+      <img class="lot-image" src="/images/gpu/shadow-era-sentinel-256mb.jpg" alt="Shadow Era Sentinel 256MB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Shadow Era Sentinel 256MB</h3>
+      <span class="lot-bid">$230.00</span>
+      <span class="lot-bids">12 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:49:35Z">Ends in 8m 55s</time>
+      <p class="lot-description">The card that first ran that one shooter at playable rates.</p>
+    </li>
+  </ul>
+</section>
+<section class="category" data-category="mining-survivors">
+  <div class="category-head">
+    <h2 class="category-name">Mining Survivors</h2>
+    <a class="category-link" href="/c/mining-survivors">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0009" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/memory-junction-hero-10gb.jpg" alt="Memory Junction Hero 10GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Memory Junction Hero 10GB</h3>
+      <span class="lot-bid">$670.00</span>
+      <span class="lot-bids">15 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:31Z">Ends in 1m 50s</time>
+      <p class="lot-description">New thermal pads, memory runs cool, seller swears.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0023" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/farm-retiree-lightly-dusty-16gb.jpg" alt="Farm Retiree, Lightly Dusty 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Farm Retiree, Lightly Dusty 16GB</h3>
+      <span class="lot-bid">$440.00</span>
+      <span class="lot-bids">3 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:48Z">Ends in 2m 8s</time>
+      <p class="lot-description">Retired from a farm upstate. Great with families.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0018" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/proof-of-work-pal-6gb.jpg" alt="Proof of Work Pal 6GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Proof of Work Pal 6GB</h3>
+      <span class="lot-bid">$210.00</span>
+      <span class="lot-bids">11 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:43:07Z">Ends in 2m 26s</time>
+      <p class="lot-description">Did a lot of work. Has very little proof.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0039" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/ex-mining-workhorse-8gb-fans-replaced.jpg" alt="Ex-Mining Workhorse 8GB, Fans Replaced" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Ex-Mining Workhorse 8GB, Fans Replaced</h3>
+      <span class="lot-bid">$215.00</span>
+      <span class="lot-bids">6 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:50Z">Ends in 4m 9s</time>
+      <p class="lot-description">Ran 24/7 for two years. Fans are new, the soul is tired.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0054" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/thermal-pad-transplant-8gb.jpg" alt="Thermal Pad Transplant 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Thermal Pad Transplant 8GB</h3>
+      <span class="lot-bid">$260.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:01Z">Ends in 4m 20s</time>
+      <p class="lot-description">Repasted, repadded and repurposed for gaming.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0026" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/rig-pull-six-pack-6-x-6gb.jpg" alt="Rig Pull Six-Pack, 6 x 6GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Rig Pull Six-Pack, 6 x 6GB</h3>
+      <span class="lot-bid">$630.00</span>
+      <span class="lot-bids">11 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:19Z">Ends in 4m 38s</time>
+      <p class="lot-description">Six identical cards from one mining frame. Riser cables included.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0035" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/heat-lamp-edition-8gb.jpg" alt="Heat Lamp Edition 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Heat Lamp Edition 8GB</h3>
+      <span class="lot-bid">$175.00</span>
+      <span class="lot-bids">6 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:37Z">Ends in 4m 57s</time>
+      <p class="lot-description">Kept a garage warm through two winters.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0057" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/riser-cable-romantic-4gb.jpg" alt="Riser Cable Romantic 4GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Riser Cable Romantic 4GB</h3>
+      <span class="lot-bid">$175.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:47:03Z">Ends in 6m 22s</time>
+      <p class="lot-description">Comes with a tangle of USB risers and a memory of better days.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0002" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/bitter-bear-market-special-12gb.jpg" alt="Bitter Bear Market Special 12GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Bitter Bear Market Special 12GB</h3>
+      <span class="lot-bid">$490.00</span>
+      <span class="lot-bids">10 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:49:39Z">Ends in 8m 59s</time>
+      <p class="lot-description">Bought at the top, sold at the bottom. Works great.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0067" data-category="mining-survivors">
+      <img class="lot-image" src="/images/gpu/open-frame-veteran-8gb.jpg" alt="Open Frame Veteran 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Open Frame Veteran 8GB</h3>
+      <span class="lot-bid">$175.00</span>
+      <span class="lot-bids">6 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:50:49Z">Ends in 10m 8s</time>
+      <p class="lot-description">Never lived in a case. Has seen sunlight and dust.</p>
+    </li>
+  </ul>
+</section>
+<section class="category" data-category="low-profile">
+  <div class="category-head">
+    <h2 class="category-name">Mini &amp; Low-Profile</h2>
+    <a class="category-link" href="/c/low-profile">See all</a>
+  </div>
+  <ul class="lot-list">
+    <li class="lot" data-lot="LOT-0050" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/single-slot-sprinter-6gb.jpg" alt="Single-Slot Sprinter 6GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Single-Slot Sprinter 6GB</h3>
+      <span class="lot-bid">$300.00</span>
+      <span class="lot-bids">13 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:42:17Z">Ends in 1m 37s</time>
+      <p class="lot-description">Bus-powered, no cables, no drama.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0066" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/tiny-tensor-tt-2-16gb.jpg" alt="Tiny Tensor TT-2 16GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Tiny Tensor TT-2 16GB</h3>
+      <span class="lot-bid">$740.00</span>
+      <span class="lot-bids">4 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:43:18Z">Ends in 2m 38s</time>
+      <p class="lot-description">Low-profile accelerator for one rack unit of ambition.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0044" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/itx-inferno-12gb.jpg" alt="ITX Inferno 12GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">ITX Inferno 12GB</h3>
+      <span class="lot-bid">$760.00</span>
+      <span class="lot-bids">15 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:43:44Z">Ends in 3m 4s</time>
+      <p class="lot-description">Short card, big fan, small case that gets very warm.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0041" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/micro-rig-marvel-10gb.jpg" alt="Micro Rig Marvel 10GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Micro Rig Marvel 10GB</h3>
+      <span class="lot-bid">$420.00</span>
+      <span class="lot-bids">5 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:22Z">Ends in 3m 41s</time>
+      <p class="lot-description">Ran a whole LAN party from a backpack.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0010" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/single-fan-sweetheart-8gb.jpg" alt="Single-Fan Sweetheart 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Single-Fan Sweetheart 8GB</h3>
+      <span class="lot-bid">$295.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:44:46Z">Ends in 4m 5s</time>
+      <p class="lot-description">One fan, one job, one happy owner.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0036" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/bracketless-bargain-4gb.jpg" alt="Bracketless Bargain 4GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Bracketless Bargain 4GB</h3>
+      <span class="lot-bid">$80.00</span>
+      <span class="lot-bids">3 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:45:35Z">Ends in 4m 54s</time>
+      <p class="lot-description">Works fine. Bracket went missing in 2019.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0073" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/shoebox-build-special-8gb.jpg" alt="Shoebox Build Special 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Shoebox Build Special 8GB</h3>
+      <span class="lot-bid">$230.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:46:27Z">Ends in 5m 47s</time>
+      <p class="lot-description">For people who put a gaming PC in a shoebox on purpose.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0059" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/edge-inference-stick-8gb.jpg" alt="Edge Inference Stick 8GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Edge Inference Stick 8GB</h3>
+      <span class="lot-bid">$235.00</span>
+      <span class="lot-bids">9 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:46:50Z">Ends in 6m 10s</time>
+      <p class="lot-description">An accelerator the size of a USB drive. Runs small models.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0030" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/fanless-phantom-4gb.jpg" alt="Fanless Phantom 4GB" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Fanless Phantom 4GB</h3>
+      <span class="lot-bid">$195.00</span>
+      <span class="lot-bids">8 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:47:14Z">Ends in 6m 34s</time>
+      <p class="lot-description">Totally silent. Heatsink weighs more than the card.</p>
+    </li>
+    <li class="lot" data-lot="LOT-0076" data-category="low-profile">
+      <img class="lot-image" src="/images/gpu/display-port-dozen-12-outputs.jpg" alt="Display Port Dozen, 12 Outputs" loading="lazy" width="512" height="512">
+      <h3 class="lot-title">Display Port Dozen, 12 Outputs</h3>
+      <span class="lot-bid">$540.00</span>
+      <span class="lot-bids">0 bids</span>
+      <time class="lot-ends" datetime="2026-11-13T21:50:09Z">Ends in 9m 29s</time>
+      <p class="lot-description">Twelve mini outputs on a tiny card. Video walls love it.</p>
+    </li>
+  </ul>
+</section>
+</main>
+<footer class="site-footer">Silicon &amp; Gavel is a fictional auction house for a scraping demo. Nothing here is for sale.</footer>
+<script>(function(){var root=document.documentElement,button=document.querySelector('.theme-switch');
+function setLabel(){button.textContent=root.dataset.theme==='dark'?'Light mode':'Dark mode'}
+setLabel();button.addEventListener('click',function(){var next=root.dataset.theme==='dark'?'light':'dark';
+root.dataset.theme=next;try{localStorage.setItem('theme',next)}catch(e){}setLabel()})})();</script>
+<script>(function(){
+var mode=document.body.dataset.live,onlyCategory=document.body.dataset.category||'',discount=Number(document.body.dataset.discount||0),names=JSON.parse(document.body.dataset.categoryNames||'{}');
+if(mode!=='v1'&&mode!=='v2')return;
+var indicator=document.querySelector('.live-indicator'),MAX_SOLD=12;
+function usd(n){return '$'+Number(n).toFixed(2)}
+function setBid(bid,amount){if(!discount){bid.textContent=usd(amount);return}
+bid.innerHTML='<del></del> <ins></ins>';bid.querySelector('del').textContent=usd(amount);bid.querySelector('ins').textContent=usd(Math.round(amount*(100-discount))/100)}
+function bidsLabel(n){return n+(n===1?' bid':' bids')}
+function isoSeconds(iso){return iso.replace(/\.\d{3}Z$/,'Z')}
+function endsLabel(iso){var s=Math.round((new Date(iso)-Date.now())/1000);if(s<=0)return 'Closing';
+var m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return 'Ends in '+h+'h '+(m%60)+'m';if(m>0)return 'Ends in '+m+'m '+(s%60)+'s';return 'Ends in '+s+'s'}
+function find(id){return document.querySelector((mode==='v1'?'li.lot':'article.tile')+'[data-lot="'+id+'"]')}
+function pulse(el,cls,ms){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(function(){el.classList.remove(cls)},ms)}
+function setText(el,sel,text){var target=el.querySelector(sel);if(target)target.textContent=text}
+function updateLot(lot){var el=find(lot.id);if(!el)return;
+if(mode==='v1'){var bid=el.querySelector('.lot-bid');if(bid&&bid.textContent.charAt(0)==='$')setBid(bid,lot.currentBid)}
+else{el.dataset.bid=Number(lot.currentBid).toFixed(2)}
+setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));pulse(el,'flash',1400)}
+function buildLot(lot){var el;if(mode==='v1'){el=document.createElement('li');el.className='lot';
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="lot-title"></h3><span class="lot-bid"></span><span class="lot-bids"></span><time class="lot-ends"></time><p class="lot-description"></p>';
+setText(el,'.lot-title',lot.title);setBid(el.querySelector('.lot-bid'),lot.currentBid);setText(el,'.lot-description',lot.description);
+var time=el.querySelector('time');time.dateTime=isoSeconds(lot.endsAt);time.textContent=endsLabel(lot.endsAt)}
+else{el=document.createElement('article');el.className='tile';el.dataset.bid=Number(lot.currentBid).toFixed(2);el.dataset.currency=lot.currency;el.dataset.ends=isoSeconds(lot.endsAt);
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="tile__title"></h3><div class="tile__meta"><span class="tile__category"></span><span class="tile__bids"></span><span class="tile__ends"></span></div><p class="tile__body"></p>';
+setText(el,'.tile__title',lot.title);setText(el,'.tile__body',lot.description);
+setText(el,'.tile__category',names[lot.category]||lot.category)}
+var image=el.querySelector('.lot-image');image.src=lot.image||'/images/placeholder.svg';image.alt=lot.title;
+el.dataset.lot=lot.id;el.dataset.category=lot.category;setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));return el}
+function getEnds(el){return mode==='v1'?(el.querySelector('time')||{}).dateTime||'':el.dataset.ends||''}
+function addLot(lot){if(find(lot.id)||(onlyCategory&&lot.category!==onlyCategory))return;
+var list=mode==='v1'?document.querySelector('section.category[data-category="'+lot.category+'"] ul.lot-list'):document.querySelector('main.auction-grid');if(!list)return;
+var el=buildLot(lot),ends=isoSeconds(lot.endsAt),before=null;
+for(var i=0;i<list.children.length;i++){if(getEnds(list.children[i])>ends){before=list.children[i];break}}
+list.insertBefore(el,before);pulse(el,'is-new',5000);changeCount(1)}
+function addSold(lot){var list=document.querySelector(mode==='v1'?'ol.sold-list':'.ticker');if(!list)return;
+var item=document.createElement(mode==='v1'?'li':'span');
+if(mode==='v1'){item.className='sold-item';item.innerHTML='<span class="sold-title"></span><span class="sold-price"></span>';
+setText(item,'.sold-title',lot.title);setText(item,'.sold-price','Sold '+usd(lot.soldPrice))}
+else{item.className='ticker__item';item.textContent=lot.title+' \u00b7 '+usd(lot.soldPrice)}
+list.insertBefore(item,list.firstChild);pulse(item,'is-new',3000);while(list.children.length>MAX_SOLD)list.removeChild(list.lastChild);
+var empty=document.querySelector('.sold-empty');if(empty)empty.remove()}
+function sellLot(lot){var el=find(lot.id);if(el){el.classList.add('is-sold');el.dataset.soldPrice=usd(lot.soldPrice);
+setTimeout(function(){el.remove()},2600);changeCount(-1)}addSold(lot)}
+function changeCount(delta){var stat=document.querySelector('.stat-open');if(stat)stat.textContent=String(Number(stat.textContent)+delta)}
+setInterval(function(){var now=Date.now();
+document.querySelectorAll(mode==='v1'?'li.lot':'article.tile').forEach(function(el){var ends=getEnds(el);if(!ends)return;
+var left=new Date(ends)-now;el.classList.toggle('ending',left<60000);
+if(mode==='v1')setText(el,'time.lot-ends',endsLabel(ends));else setText(el,'.tile__ends',endsLabel(ends))})},1000);
+function connect(){var socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+socket.onopen=function(){indicator.classList.add('on');indicator.textContent='Live'};
+socket.onclose=function(){indicator.classList.remove('on');indicator.textContent='Reconnecting';setTimeout(connect,2000)};
+socket.onmessage=function(event){var message=JSON.parse(event.data);
+if(message.type==='lot')updateLot(message.lot);else if(message.type==='sold')sellLot(message.lot);else if(message.type==='new')addLot(message.lot)}}
+connect()})();</script>
+</body>
+</html>
