@@ -6,6 +6,7 @@ import { renderAdmin } from './admin.ts';
 import { createPassValue, isPassValid, PASS_COOKIE, PASS_TTL_SECONDS } from './captcha.ts';
 import { CATEGORIES, type Category } from './catalog.ts';
 import { LAYOUTS, renderCaptchaGate, renderLayout, type Layout } from './layouts.ts';
+import { readImage, type ImageUrlGetter } from './images.ts';
 import type { AuctionSnapshot } from './live.ts';
 
 const layoutRequestSchema = z.object({ layout: z.enum(LAYOUTS) });
@@ -28,7 +29,12 @@ export type CaptchaOptions = {
  * Creates the auction house server. The layout lives in memory and starts at `v1`.
  * Without `adminSecret`, layout switching is refused.
  */
-export function createApp(options: { adminSecret: string | undefined; captcha: CaptchaOptions; getSnapshot: () => AuctionSnapshot }) {
+export function createApp(options: {
+  adminSecret: string | undefined;
+  captcha: CaptchaOptions;
+  getSnapshot: () => AuctionSnapshot;
+  getImageUrl: ImageUrlGetter;
+}) {
   let layout: Layout = 'v1';
   let flakyRequestCount = 0;
   const app = new Hono();
@@ -46,7 +52,7 @@ export function createApp(options: { adminSecret: string | undefined; captcha: C
       return c.html(renderCaptchaGate(options.captcha.siteKey));
     }
     const { open, sold } = options.getSnapshot();
-    return c.html(renderLayout(layout, { open, sold, now, ...(category ? { category } : {}) }));
+    return c.html(renderLayout(layout, { open, sold, now, getImageUrl: options.getImageUrl, ...(category ? { category } : {}) }));
   }
 
   app.get('/', (c) => renderLots(c));
@@ -54,6 +60,16 @@ export function createApp(options: { adminSecret: string | undefined; captcha: C
   app.get('/c/:slug', (c) => {
     const category = CATEGORIES.find((candidate) => candidate.slug === c.req.param('slug'));
     return category ? renderLots(c, category) : c.text('No such category', 404);
+  });
+
+  app.get('/images/:file', async (c) => {
+    const image = await readImage(c.req.param('file'));
+    if (!image) {
+      return c.text('Not found', 404);
+    }
+    c.header('content-type', image.contentType);
+    c.header('cache-control', 'public, max-age=86400');
+    return c.body(new Uint8Array(image.body));
   });
 
   app.post('/captcha/verify', async (c) => {

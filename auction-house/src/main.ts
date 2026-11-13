@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server';
 import { WebSocketServer } from 'ws';
 import { createApp } from './app.ts';
 import { TEST_SECRET_KEY, TEST_SITE_KEY, verifyRecaptchaToken } from './captcha.ts';
+import { createImageUrlGetter } from './images.ts';
 import { startAuction } from './live.ts';
 import { createMemoryStore, createPostgresStore } from './store.ts';
 
@@ -35,8 +36,10 @@ if (!databaseUrl) {
 }
 const auction = await startAuction({ store: databaseUrl ? await createPostgresStore(databaseUrl) : createMemoryStore() });
 
+const getImageUrl = createImageUrlGetter();
 const app = createApp({
   adminSecret,
+  getImageUrl,
   captcha: {
     siteKey: recaptchaSiteKey ?? TEST_SITE_KEY,
     cookieSecret,
@@ -59,7 +62,7 @@ server.on('upgrade', (request, socket, head) => {
   sockets.handleUpgrade(request, socket, head, (client) => sockets.emit('connection', client, request));
 });
 auction.subscribe((change) => {
-  const message = JSON.stringify(change);
+  const message = JSON.stringify({ ...change, lot: { ...change.lot, image: getImageUrl(change.lot.title) } });
   for (const client of sockets.clients) {
     if (client.readyState === client.OPEN) {
       client.send(message);

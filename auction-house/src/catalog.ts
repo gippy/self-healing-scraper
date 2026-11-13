@@ -1,90 +1,136 @@
-export const BRAND = 'Gavel & Glitch Auctions';
+export const BRAND = 'Gavel & Grain Auctions';
+
+/** Raise this when the catalog changes; on startup a saved auction from another version is cleared and reseeded. */
+export const CATALOG_VERSION = 'woodworking-1';
 
 export type Category = { slug: string; name: string };
 
 export type CatalogItem = { title: string; description: string; startingBid: number };
 
 export const CATEGORIES: Category[] = [
-  { slug: 'gadgets', name: 'Gadgets & Gizmos' },
-  { slug: 'home-office', name: 'Home & Office' },
-  { slug: 'collectibles', name: 'Collectibles' },
-  { slug: 'wearables', name: 'Wearables' },
-  { slug: 'music', name: 'Music & Audio' },
-  { slug: 'outdoors', name: 'Outdoors' },
+  { slug: 'hand-tools', name: 'Hand Tools' },
+  { slug: 'power-tools', name: 'Power Tools' },
+  { slug: 'lumber', name: 'Lumber & Live-Edge Slabs' },
+  { slug: 'chairs-stools', name: 'Chairs & Stools' },
+  { slug: 'tables', name: 'Tables' },
+  { slug: 'cabinets-storage', name: 'Cabinets & Storage' },
 ];
 
-// What new lots are made of: every category has its own pool of items.
+/** The file name of an item's product photo, from its title: `Vintage No. 4 Smoothing Plane` → `vintage-no-4-smoothing-plane`. */
+export function getItemSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// What new lots are made of: every category has its own pool of items. Titles are unique across the catalog.
 export const CATALOG: Record<string, CatalogItem[]> = {
-  gadgets: [
-    { title: 'Vintage Rubber Duck Debugger', description: 'Squeak intact. Has heard every excuse since 1999.', startingBid: 24 },
-    { title: 'Self-Stirring Coffee Mug, Slightly Possessed', description: 'Stirs on its own schedule. Mostly clockwise.', startingBid: 18 },
-    { title: 'USB Pet Rock with Firmware 2.0', description: 'Does nothing, now with release notes.', startingBid: 12 },
-    { title: 'Bluetooth Toaster, Pairs Eventually', description: 'Toasts evenly once it finds your phone.', startingBid: 59 },
-    { title: 'Retro Pocket Calculator, Solar', description: 'Works in daylight and in strong opinions.', startingBid: 22 },
-    { title: 'Noise-Cancelling Earmuffs for Meetings', description: 'Cancels noise and most action items.', startingBid: 45 },
-    { title: 'Smart Plant Pot That Judges You', description: 'Reminds you to water it in a disappointed tone.', startingBid: 38 },
-    { title: 'Mechanical Keyboard, Extremely Clicky', description: 'Your neighbors will know when you are productive.', startingBid: 89 },
-    { title: 'Drone with Fear of Heights', description: 'Hovers confidently at knee level.', startingBid: 120 },
-    { title: 'Label Maker, Pre-Loaded with "Misc"', description: 'Organize everything into one drawer.', startingBid: 27 },
+  'hand-tools': [
+    { title: 'Vintage No. 4 Smoothing Plane', description: 'Cast iron body, freshly flattened sole and a sharp iron. Takes whisper-thin shavings.', startingBid: 65 },
+    { title: 'Low-Angle Block Plane', description: 'Fits in one hand and trims end grain cleanly. Adjustable mouth.', startingBid: 45 },
+    { title: 'Set of Six Bevel-Edge Chisels', description: 'Ash handles, sizes from 1/4 to 1 inch, honed and ready.', startingBid: 85 },
+    { title: 'Japanese Pull Saw, Ryoba Pattern', description: 'Rip teeth on one edge, crosscut on the other. Cuts on the pull stroke.', startingBid: 38 },
+    { title: 'Brass-Backed Dovetail Saw', description: 'Fine teeth and a heavy brass spine for straight, tight joints.', startingBid: 70 },
+    { title: 'Beech Marking Gauge', description: 'Brass wear strips and a crisp cutting pin. Holds its setting.', startingBid: 22 },
+    { title: 'Cast Iron Spokeshave', description: 'Shapes chair spindles and curved edges. Flat sole, fine adjuster.', startingBid: 28 },
+    { title: 'Card Scraper Set with Burnisher', description: 'Three scrapers and a hardened burnisher for glassy surfaces.', startingBid: 18 },
+    { title: 'Rosewood Try Square, 9 Inch', description: 'Brass-faced stock, checked true against a machinist square.', startingBid: 26 },
+    { title: 'Hand Brace with Auger Bits', description: 'Ten-inch sweep, ratchet chuck and a roll of seven auger bits.', startingBid: 48 },
+    { title: 'Carving Gouge Set, Twelve Pieces', description: 'Palm-sized handles, assorted sweeps, in a canvas tool roll.', startingBid: 95 },
+    { title: 'Combination Waterstone, 1000/6000', description: 'Medium and fine grit in one stone, with a non-slip base.', startingBid: 35 },
+    { title: 'Mortise Chisel, 3/8 Inch', description: 'Thick blade and a hooped handle made for mallet work.', startingBid: 32 },
+    { title: 'Joiner Mallet with Hardwood Head', description: 'Dense, heavy head and a tapered handle that never flies off.', startingBid: 30 },
+    { title: 'Crosscut Panel Saw, 26 Inch', description: 'Taper-ground blade with a beech handle. Recently sharpened.', startingBid: 40 },
   ],
-  'home-office': [
-    { title: 'Standing Desk for Sitting', description: 'Motorized, quiet and solid oak. It goes up, but mostly it stays down.', startingBid: 1299 },
-    { title: 'Ergonomic Chair, Previously Owned by a CFO', description: 'Leans back further than the budget allows.', startingBid: 340 },
-    { title: 'Inbox Zero Paperweight', description: 'Heavy enough to hold down 4,000 unread emails.', startingBid: 16 },
-    { title: 'Whiteboard with Unerasable Architecture Diagram', description: 'Someone wrote "DO NOT ERASE" in 2019. We did not.', startingBid: 75 },
-    { title: 'Desk Lamp Shaped Like a Semicolon', description: 'A warm light shaped like the character you forgot.', startingBid: 64 },
-    { title: 'Cable Drawer, Contents Unknown', description: 'At least one cable fits something you own.', startingBid: 9 },
-    { title: 'Monitor Arm with Strong Opinions', description: 'Holds any screen at exactly the wrong height.', startingBid: 85 },
-    { title: 'Wall Clock That Runs on Sprint Time', description: 'Every hour takes two weeks.', startingBid: 33 },
-    { title: 'Bookshelf of Unread Tech Books', description: 'Spines uncracked, intentions intact.', startingBid: 140 },
-    { title: 'Office Plant, Plastic, Thriving', description: 'The only plant to survive the reorg.', startingBid: 21 },
+  'power-tools': [
+    { title: 'Cordless Drill Driver Kit, Two Batteries', description: 'Two-speed gearbox, charger and a hard case.', startingBid: 90 },
+    { title: 'Random Orbit Sander, 5 Inch', description: 'Variable speed, dust bag and a stack of assorted discs.', startingBid: 55 },
+    { title: 'Plunge Router with Edge Guide', description: 'Two horsepower, soft start and both collets included.', startingBid: 150 },
+    { title: 'Contractor Table Saw, 10 Inch', description: 'Cast iron top, folding stand and a good rip fence.', startingBid: 420 },
+    { title: 'Sliding Compound Miter Saw', description: 'Twelve-inch blade with laser line. Cuts wide boards in one pass.', startingBid: 310 },
+    { title: 'Benchtop Drill Press', description: 'Twelve speeds, tilting table and a keyed chuck.', startingBid: 180 },
+    { title: 'Variable-Speed Jigsaw', description: 'Orbital action, bevel base and a dozen spare blades.', startingBid: 45 },
+    { title: 'Biscuit Joiner in Carry Case', description: 'Adjustable fence for quick, aligned panel glue-ups.', startingBid: 95 },
+    { title: 'Benchtop Thickness Planer, 13 Inch', description: 'Two-blade cutterhead and folding infeed tables.', startingBid: 340 },
+    { title: 'Fourteen-Inch Bandsaw', description: 'Resaws boards up to six inches. Comes with three blades.', startingBid: 520 },
+    { title: 'Midi Wood Lathe', description: 'Variable speed, twelve-inch swing and a tool rest.', startingBid: 380 },
+    { title: 'Track Saw with Two Rails', description: 'Splinter-free cuts on sheet goods. Rails join to 110 inches.', startingBid: 360 },
+    { title: 'Shop Dust Collector, 1.5 HP', description: 'Single stage with a fine filter bag and a wheeled base.', startingBid: 260 },
+    { title: 'Oscillating Spindle Sander', description: 'Five drums and matching table inserts for smooth curves.', startingBid: 140 },
+    { title: 'Detail Palm Sander', description: 'Triangle pad for corners and tight spots. Light and quiet.', startingBid: 30 },
   ],
-  collectibles: [
-    { title: 'First Edition Error Message, Framed', description: '"Something went wrong." Museum-grade matting.', startingBid: 95 },
-    { title: 'Signed Off-by-One Socks', description: 'Three socks per pair, signed on the third.', startingBid: 14 },
-    { title: 'Original Merge Conflict Mug', description: 'Keeps both your coffee and theirs warm.', startingBid: 19 },
-    { title: 'Limited Floppy Disk, Contains One Meme', description: 'Read-only. Like most memes.', startingBid: 42 },
-    { title: 'Commemorative Coin from the Great Outage', description: 'Minted the day the status page went green again.', startingBid: 60 },
-    { title: 'Mint Condition Dial-Up Modem', description: 'Original handshake sound, never connected.', startingBid: 55 },
-    { title: 'Trading Card: Legendary Senior Engineer', description: 'Rare holographic. Ability: "It depends."', startingBid: 30 },
-    { title: 'Snow Globe with Tiny Data Center', description: 'Shake to simulate a cooling failure.', startingBid: 28 },
-    { title: 'Autographed Printout of a Stack Trace', description: '412 lines, signed on the last frame.', startingBid: 48 },
-    { title: 'Antique Fax Machine, Still Sending', description: 'Has been sending the same page since Tuesday.', startingBid: 110 },
+  lumber: [
+    { title: 'Black Walnut Live-Edge Slab, 6 Feet', description: 'Kiln dried, two inches thick, with a dramatic natural edge.', startingBid: 450 },
+    { title: 'Spalted Maple Bowl Blanks, Set of Four', description: 'Dark zone lines through pale maple. Sealed ends.', startingBid: 60 },
+    { title: 'Quartersawn White Oak, 20 Board Feet', description: 'Ray fleck on every face. Straight grain, ready to mill.', startingBid: 180 },
+    { title: 'Cherry Boards, Bundle of Ten', description: 'Four-quarter stock that darkens to a rich red with time.', startingBid: 160 },
+    { title: 'Olive Wood Turning Blanks', description: 'Swirled, fragrant grain for pens, handles and small bowls.', startingBid: 45 },
+    { title: 'Hand-Hewn Reclaimed Barn Beam', description: 'Old-growth oak from a 19th-century barn, adze marks intact.', startingBid: 220 },
+    { title: 'Curly Maple Guitar Top Set', description: 'Bookmatched pair with deep, even figure.', startingBid: 85 },
+    { title: 'Live-Edge Elm Slab, Bench Length', description: 'Five feet long with a wavy edge, flattened on one side.', startingBid: 260 },
+    { title: 'Hard Maple Butcher Block Blank', description: 'Edge-glued and sanded, ready for legs or a countertop.', startingBid: 130 },
+    { title: 'Purpleheart Strips, Bundle', description: 'Vivid purple accent wood for inlays and cutting boards.', startingBid: 55 },
+    { title: 'Burl Walnut Veneer Pack', description: 'Sequenced leaves for matching panels and box lids.', startingBid: 70 },
+    { title: 'Thick Sapele Boards', description: 'Eight-quarter, ribbon-striped and stable. Great for tables.', startingBid: 150 },
+    { title: 'Ash Bending Stock for Chairs', description: 'Straight-grained green ash, split from the log for steam bending.', startingBid: 40 },
+    { title: 'Western Red Cedar Planks', description: 'Light, aromatic and weather resistant, for outdoor builds.', startingBid: 95 },
+    { title: 'Bog Oak Offcuts', description: 'Black oak preserved in peat for thousands of years.', startingBid: 120 },
   ],
-  wearables: [
-    { title: 'Hand-Knitted Infinite Loop Scarf', description: 'Knitted in one continuous round. There is no end.', startingBid: 54 },
-    { title: 'Legacy Code Hard Hat', description: 'For refactoring files older than the intern.', startingBid: 27 },
-    { title: 'Hoodie with Built-In Do Not Disturb', description: 'Hood up means status: busy.', startingBid: 49 },
-    { title: 'Smartwatch That Only Tells Stand-Up Time', description: 'Vibrates at 9:59 every weekday.', startingBid: 79 },
-    { title: 'Conference Lanyard Collection, 40 Pieces', description: 'Every badge from a decade of networking.', startingBid: 35 },
-    { title: 'Slippers with Arrow Key Soles', description: 'Leave a trail of up, up, down, down.', startingBid: 23 },
-    { title: 'Reflective Vest for Late Deploys', description: 'Stay visible during the 5 pm push.', startingBid: 18 },
-    { title: 'Bow Tie, Clip-On, Tab-Indented', description: 'Formal wear that respects your linter.', startingBid: 15 },
-    { title: 'Sneakers, Very Fast, Untested', description: 'Ship first, tie laces later.', startingBid: 130 },
-    { title: 'Beanie with Propeller, Production Grade', description: 'Rated for 3,000 rpm in light wind.', startingBid: 25 },
+  'chairs-stools': [
+    { title: 'Windsor Chair in Ash and Elm', description: 'Steam-bent bow back, hand-shaped seat and turned legs.', startingBid: 280 },
+    { title: 'Shaker Ladder-Back Rocking Chair', description: 'Maple frame with a woven tape seat. Rocks quietly.', startingBid: 340 },
+    { title: 'Three-Legged Milking Stool', description: 'Never wobbles on an uneven floor. Oiled oak.', startingBid: 45 },
+    { title: 'Walnut Bar Stools, Pair', description: 'Counter height with sculpted seats and brass footrests.', startingBid: 260 },
+    { title: 'Danish-Style Teak Lounge Chair', description: 'Low, wide seat with wool cushions and a sloped back.', startingBid: 520 },
+    { title: "Child's Rush-Seat Chair", description: 'Small ladder-back chair with a hand-woven rush seat.', startingBid: 70 },
+    { title: 'Bent Plywood Dining Chair', description: 'One-piece molded seat and back on solid beech legs.', startingBid: 110 },
+    { title: 'Oak Church Pew, Six Feet', description: 'Reclaimed from a chapel. Seats three, worn smooth by decades of use.', startingBid: 300 },
+    { title: 'Cherry Shop Stool with Footrest', description: 'Swivel seat and a footrest ring. Workbench height.', startingBid: 120 },
+    { title: 'Folding Mahogany Campaign Chair', description: 'Leather sling seat; folds flat for travel.', startingBid: 190 },
+    { title: 'Hand-Carved Rocking Horse', description: 'Painted dapple gray with a horsehair mane, on bow rockers.', startingBid: 210 },
+    { title: 'Woven Cord Footstool', description: 'Danish cord seat on a square oak frame.', startingBid: 85 },
+    { title: 'Spindle-Back Kitchen Chairs, Set of Four', description: 'Turned spindles and saddle seats in honey-toned pine.', startingBid: 360 },
+    { title: 'Live-Edge Slab Bench', description: 'One walnut slab on splayed legs. Seats two.', startingBid: 240 },
+    { title: 'Steam-Bent Ash Armchair', description: 'Continuous arm bent from one piece of ash.', startingBid: 310 },
   ],
-  music: [
-    { title: 'Vinyl: Greatest Dial Tones, Vol. 2', description: 'Remastered busy signals on 180 g vinyl.', startingBid: 32 },
-    { title: 'Kazoo Ensemble Starter Kit', description: 'Twelve kazoos and a conductor baton.', startingBid: 20 },
-    { title: 'Synthesizer That Only Plays Error Beeps', description: 'Four octaves of system notification sounds.', startingBid: 210 },
-    { title: 'Electric Ukulele, Surprisingly Loud', description: 'Small instrument, large personality.', startingBid: 145 },
-    { title: 'Cassette Mixtape: Songs to Debug To', description: 'Side B is just rain sounds and sighs.', startingBid: 11 },
-    { title: 'Studio Headphones, One Side Louder', description: 'Perfect for listening with one ear on Slack.', startingBid: 65 },
-    { title: 'Metronome Set to Release Cadence', description: 'Ticks every two weeks. Very relaxing.', startingBid: 26 },
-    { title: 'Drum Machine with Snooze Button', description: 'Pauses the beat for nine more minutes.', startingBid: 175 },
-    { title: 'Tuning Fork, Tuned to Fan Noise', description: 'Resonates with every server room.', startingBid: 13 },
-    { title: 'Jukebox Loaded with Hold Music', description: 'Your call is important to this jukebox.', startingBid: 680 },
+  tables: [
+    { title: 'Pine Farmhouse Dining Table', description: 'Seats eight. Breadboard ends and a scrubbed top.', startingBid: 520 },
+    { title: 'Walnut Live-Edge Coffee Table', description: 'Book-matched slabs with a butterfly key on steel hairpin legs.', startingBid: 680 },
+    { title: 'Shaker Side Table with Drawer', description: 'Tapered legs, dovetailed drawer and a wooden knob.', startingBid: 180 },
+    { title: 'Oak Trestle Table, Eight Feet', description: 'Pegged trestle base that knocks down for moving.', startingBid: 750 },
+    { title: 'Round Cherry Pedestal Table', description: 'Forty-two inches across on a turned column and three feet.', startingBid: 460 },
+    { title: 'Drop-Leaf Gateleg Table', description: 'Folds to a narrow console and opens to seat six.', startingBid: 290 },
+    { title: 'Split-Top Beech Workbench', description: 'Leg vise, wagon vise and a planing stop. Dead flat.', startingBid: 640 },
+    { title: 'Teak Nesting Tables, Set of Three', description: 'Mid-century style; the three slide neatly into one.', startingBid: 240 },
+    { title: 'Butcher Block Kitchen Island', description: 'Maple top with an open shelf and towel bars.', startingBid: 560 },
+    { title: 'Solid Walnut Writing Desk', description: 'Two drawers with hand-cut dovetails and a leather inlay.', startingBid: 820 },
+    { title: 'Maple Tavern Table', description: 'Small and sturdy with splayed legs and a breadboard top.', startingBid: 210 },
+    { title: 'Quartersawn Oak Hall Console', description: 'Narrow, with a lower shelf and through-tenons.', startingBid: 330 },
+    { title: "Child's Craft Table with Two Stools", description: 'Low birch table with a rounded edge and wipe-clean finish.', startingBid: 120 },
+    { title: 'Parquet Game Table', description: 'Inlaid chessboard top and a drawer for the pieces.', startingBid: 270 },
+    { title: 'Elm Bedside Table', description: 'One drawer and an open shelf, finished in hard wax oil.', startingBid: 140 },
   ],
-  outdoors: [
-    { title: 'Tent That Sets Itself Up, Eventually', description: 'Read the README before camping.', startingBid: 160 },
-    { title: 'Hammock Rated for One Long Weekend', description: 'Load-tested with a novel and a nap.', startingBid: 58 },
-    { title: 'Compass That Points to the Nearest Wi-Fi', description: 'North is relative. Signal is absolute.', startingBid: 37 },
-    { title: 'Camping Stove with Status Lights', description: 'Green means dinner. Red means read the logs.', startingBid: 72 },
-    { title: 'Kayak, Lightly Used, Very Dry', description: 'Never left the garage. Excellent condition.', startingBid: 420 },
-    { title: 'Bird Feeder with Rate Limiting', description: 'Ten seeds per bird per minute.', startingBid: 29 },
-    { title: 'Trail Map of Our Old Monolith', description: 'Hand-drawn. Here be dragons.', startingBid: 24 },
-    { title: 'Solar Charger for Optimists', description: 'Charges fully on the third sunny day.', startingBid: 46 },
-    { title: 'Picnic Blanket, Waterproof Mostly', description: 'Keeps ants and most spills out.', startingBid: 31 },
-    { title: 'Mountain Bike with Seventeen Gears', description: 'Uses two of them. The other fifteen are for show.', startingBid: 390 },
+  'cabinets-storage': [
+    { title: "Oak Machinist's Tool Chest", description: 'Eleven felt-lined drawers and a lift-up lid.', startingBid: 420 },
+    { title: 'Pine Blanket Chest', description: 'Dovetailed corners, a till inside and a milk-paint finish.', startingBid: 180 },
+    { title: 'Walnut Wall Cabinet with Glass Door', description: 'Hand-cut joinery and a wooden turn latch.', startingBid: 360 },
+    { title: 'Apothecary Cabinet, Thirty Drawers', description: 'Small labeled drawers with brass card holders.', startingBid: 540 },
+    { title: 'Shaker Pegboard Shelf', description: 'Three-foot shelf with five turned maple pegs.', startingBid: 60 },
+    { title: 'Cherry Bookcase, Five Shelves', description: 'Adjustable shelves and a crown molding top.', startingBid: 380 },
+    { title: 'Dovetailed Keepsake Box', description: 'Walnut and maple with a lift-off lid. Fits in your hands.', startingBid: 75 },
+    { title: 'Painted Pine Kitchen Hutch', description: 'Open plate rack above, two cupboards below.', startingBid: 450 },
+    { title: 'Teak Mid-Century Sideboard', description: 'Sliding doors, tapered legs and four inner drawers.', startingBid: 690 },
+    { title: 'Dutch Hanging Tool Cabinet', description: 'Sloped front with saw tills and chisel racks inside.', startingBid: 260 },
+    { title: 'Reclaimed Oak Wine Rack', description: 'Holds twenty-four bottles. Built from old floorboards.', startingBid: 140 },
+    { title: 'Library Card Catalog Drawers', description: 'Fifteen-drawer oak unit from a school library.', startingBid: 480 },
+    { title: 'Spice Rack with Turned Spindles', description: 'Two shelves with turned rails. Mounts on the wall.', startingBid: 45 },
+    { title: 'Wall-Mounted Lumber Rack', description: 'Six steel-reinforced oak arms for long boards.', startingBid: 90 },
+    { title: 'Jewelry Box with Lift-Out Tray', description: 'Felt-lined, with a lift-out ring tray and a brass hinge.', startingBid: 95 },
   ],
 };
+
+/** Every catalog item, in category order. */
+export function getCatalogItems(): CatalogItem[] {
+  return CATEGORIES.flatMap((category) => CATALOG[category.slug] ?? []);
+}

@@ -2,7 +2,7 @@
 // - `v1`: patches `li.lot` cards and the `ol.sold-list` strip;
 // - `v2`: patches `article.tile` cards and the `.ticker`;
 // - anything else: does nothing.
-// Messages from GET /ws: `lot` (a new bid), `sold` and `new`.
+// Messages from GET /ws: `lot` (a new bid), `sold` and `new`; each lot carries its `image` URL.
 export const LIVE_SCRIPT = `(function(){
 var mode=document.body.dataset.live,onlyCategory=document.body.dataset.category||'',names=JSON.parse(document.body.dataset.categoryNames||'{}');
 if(mode!=='v1'&&mode!=='v2')return;
@@ -20,13 +20,14 @@ if(mode==='v1'){var bid=el.querySelector('.lot-bid');if(bid&&bid.textContent.cha
 else{el.dataset.bid=Number(lot.currentBid).toFixed(2)}
 setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));pulse(el,'flash',1400)}
 function buildLot(lot){var el;if(mode==='v1'){el=document.createElement('li');el.className='lot';
-el.innerHTML='<h3 class="lot-title"></h3><span class="lot-bid"></span><span class="lot-bids"></span><time class="lot-ends"></time><p class="lot-description"></p>';
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="lot-title"></h3><span class="lot-bid"></span><span class="lot-bids"></span><time class="lot-ends"></time><p class="lot-description"></p>';
 setText(el,'.lot-title',lot.title);setText(el,'.lot-bid',usd(lot.currentBid));setText(el,'.lot-description',lot.description);
 var time=el.querySelector('time');time.dateTime=isoSeconds(lot.endsAt);time.textContent=endsLabel(lot.endsAt)}
 else{el=document.createElement('article');el.className='tile';el.dataset.bid=Number(lot.currentBid).toFixed(2);el.dataset.currency=lot.currency;el.dataset.ends=isoSeconds(lot.endsAt);
-el.innerHTML='<h3 class="tile__title"></h3><div class="tile__meta"><span class="tile__category"></span><span class="tile__bids"></span><span class="tile__ends"></span></div><p class="tile__body"></p>';
+el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="tile__title"></h3><div class="tile__meta"><span class="tile__category"></span><span class="tile__bids"></span><span class="tile__ends"></span></div><p class="tile__body"></p>';
 setText(el,'.tile__title',lot.title);setText(el,'.tile__body',lot.description);
 setText(el,'.tile__category',names[lot.category]||lot.category)}
+var image=el.querySelector('.lot-image');image.src=lot.image||'/images/placeholder.svg';image.alt=lot.title;
 el.dataset.lot=lot.id;el.dataset.category=lot.category;setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));return el}
 function getEnds(el){return mode==='v1'?(el.querySelector('time')||{}).dateTime||'':el.dataset.ends||''}
 function addLot(lot){if(find(lot.id)||(onlyCategory&&lot.category!==onlyCategory))return;

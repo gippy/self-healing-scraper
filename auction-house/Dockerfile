@@ -5,6 +5,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
+COPY public ./public
 ENV PORT=8080
 EXPOSE 8080
 CMD ["pnpm", "start"]

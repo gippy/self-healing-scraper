@@ -10,7 +10,8 @@
     "dev": "node --watch --env-file-if-exists=.env src/main.ts",
     "type-check": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.ts\"",
-    "check": "pnpm run type-check && pnpm test"
+    "check": "pnpm run type-check && pnpm test",
+    "generate-images": "node --env-file-if-exists=.env scripts/generate-images.ts"
   },
   "engines": {
     "node": ">=24.11 <25"

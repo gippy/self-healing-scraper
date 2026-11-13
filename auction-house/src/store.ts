@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { CATEGORIES } from './catalog.ts';
+import { CATALOG_VERSION, CATEGORIES } from './catalog.ts';
 import { createSeedState, type AuctionState, type Bid, type Change, type Lot, type Random } from './simulation.ts';
 
 /** Where the auction state lives between restarts. */
@@ -40,6 +40,7 @@ export const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS lots_status_sold_at_idx ON lots (status, sold_at DESC)`,
   `CREATE TABLE IF NOT EXISTS bids (time timestamptz NOT NULL, lot_id text NOT NULL, amount numeric NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS meta (key text PRIMARY KEY, value text NOT NULL)`,
 ];
 
 export const CREATE_BIDS_HYPERTABLE = `SELECT create_hypertable('bids', by_range('time'), if_not_exists => TRUE)`;
@@ -97,8 +98,10 @@ function getTouchedLots(changes: Change[]): Lot[] {
 }
 
 /**
- * Keeps the auction in Postgres (Tiger Data). Creates the tables when missing and seeds them when no lot is open.
- * `bids` becomes a TimescaleDB hypertable; on plain Postgres it stays a normal table.
+ * Keeps the auction in Postgres (Tiger Data).
+ * - Creates the tables when missing and seeds them when no lot is open.
+ * - Clears lots and bids once when the saved catalog version differs from `CATALOG_VERSION`.
+ * - `bids` becomes a TimescaleDB hypertable; on plain Postgres it stays a normal table.
  */
 export async function createPostgresStore(databaseUrl: string): Promise<Store> {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 4 });
@@ -126,6 +129,28 @@ export async function createPostgresStore(databaseUrl: string): Promise<Store> {
     }
   }
 
+  // A saved auction from another catalog version is cleared, so the startup below seeds lots from the current catalog.
+  async function resetForCatalog(savedVersion: string | undefined): Promise<void> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('TRUNCATE bids');
+      await client.query('DELETE FROM lots');
+      await client.query('DELETE FROM categories WHERE NOT (slug = ANY($1))', [CATEGORIES.map((category) => category.slug)]);
+      await client.query(
+        `INSERT INTO meta (key, value) VALUES ('catalog_version', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [CATALOG_VERSION],
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+    console.log(`catalog ${savedVersion ?? '(none)'} -> ${CATALOG_VERSION}: cleared saved lots and bids`);
+  }
+
   return {
     async load(now, random) {
       for (const statement of SCHEMA_STATEMENTS) {
@@ -135,6 +160,10 @@ export async function createPostgresStore(databaseUrl: string): Promise<Store> {
         await pool.query(CREATE_BIDS_HYPERTABLE);
       } catch (error) {
         console.warn(`bids stays a plain table, TimescaleDB is not available: ${String(error)}`);
+      }
+      const savedVersion = (await pool.query(`SELECT value FROM meta WHERE key = 'catalog_version'`)).rows[0]?.value as string | undefined;
+      if (savedVersion !== CATALOG_VERSION) {
+        await resetForCatalog(savedVersion);
       }
       for (const category of CATEGORIES) {
         await pool.query('INSERT INTO categories (slug, name) VALUES ($1, $2) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name', [

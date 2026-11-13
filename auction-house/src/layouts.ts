@@ -1,5 +1,6 @@
 import { CATEGORIES, type Category } from './catalog.ts';
 import { LIVE_SCRIPT } from './live-script.ts';
+import type { ImageUrlGetter } from './images.ts';
 import { escapeHtml, renderPage } from './page.ts';
 import type { Lot } from './simulation.ts';
 
@@ -17,7 +18,7 @@ export const LAYOUT_DESCRIPTIONS: Record<Layout, string> = {
 };
 
 /** What a page shows: every open lot (ending soonest first) and the recently sold ones, or one category of them. */
-export type PageModel = { open: Lot[]; sold: Lot[]; now: Date; category?: Category };
+export type PageModel = { open: Lot[]; sold: Lot[]; now: Date; getImageUrl: ImageUrlGetter; category?: Category };
 
 const CZK_PER_USD = 24;
 const V5_INJECTED_DESCRIPTION =
@@ -44,7 +45,8 @@ const V1_CSS = `.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-c
 .category-name{margin:0;font-size:26px;letter-spacing:-.02em}
 .category-link{color:var(--accent);font-weight:700;font-size:14px;text-decoration:none}
 .lot-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
-.lot{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"title title" "desc desc" "bid ends" "bids ends";gap:4px 12px;padding:18px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);transition:transform .2s}
+.lot{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"image image" "title title" "desc desc" "bid ends" "bids ends";gap:4px 12px;padding:0 18px 18px;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;transition:transform .2s}
+.lot .lot-image{grid-area:image;display:block;width:calc(100% + 36px);height:auto;aspect-ratio:4/3;margin:0 -18px 12px;object-fit:cover;background:#ece6dc}
 .lot-title{grid-area:title;margin:0;font-size:17px;line-height:1.3;letter-spacing:-.01em}
 .lot-description{grid-area:desc;margin:0 0 10px;color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lot-bid{grid-area:bid;font-size:28px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -54,7 +56,7 @@ const V1_CSS = `.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-c
 .lot.flash{animation:flash 1.4s ease-out}
 .lot.flash .lot-bid{animation:pop .5s ease-out;color:var(--accent)}
 .lot.is-new{animation:arrive .7s ease-out;outline:2px solid var(--accent);outline-offset:-2px}
-.lot.is-new::before{content:"New";position:absolute;top:-9px;right:14px;padding:2px 8px;border-radius:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.lot.is-new::before{content:"New";position:absolute;top:12px;right:14px;z-index:1;padding:2px 8px;border-radius:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .lot.is-sold{animation:leave 2.6s ease-in forwards}
 .lot.is-sold::after{content:"Sold " attr(data-sold-price);position:absolute;inset:0;display:grid;place-items:center;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--ok);font-size:26px;font-weight:900;letter-spacing:.02em;transform:rotate(-6deg)}
 @keyframes flash{0%{background:var(--accent-soft);transform:scale(1.02)}100%{background:var(--surface);transform:none}}
@@ -67,6 +69,7 @@ const V2_CSS = `.v2-head{margin:8px 0 18px;font:700 clamp(28px,3.4vw,40px)/1.1 G
 .ticker__item.is-new{color:var(--accent)}
 .auction-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px;background:var(--line);border:2px solid var(--line)}
 .tile{position:relative;display:flex;flex-direction:column;gap:8px;min-height:220px;padding:20px 20px 64px;background:var(--surface)}
+.tile .lot-image{display:block;width:calc(100% + 40px);height:auto;aspect-ratio:1/1;margin:-20px -20px 6px;object-fit:cover;filter:saturate(.85) contrast(1.05);background:#ece6dc}
 .tile::after{content:"$" attr(data-bid);position:absolute;left:20px;bottom:18px;font:800 26px/1 Georgia,serif;font-variant-numeric:tabular-nums}
 .tile__title{margin:0;font:700 16px/1.3 Georgia,serif;text-transform:uppercase;letter-spacing:.05em}
 .tile__meta{display:flex;flex-wrap:wrap;gap:6px}
@@ -76,7 +79,7 @@ const V2_CSS = `.v2-head{margin:8px 0 18px;font:700 clamp(28px,3.4vw,40px)/1.1 G
 .tile.flash{animation:flash 1.4s ease-out}
 .tile.is-new{animation:arrive .7s ease-out;box-shadow:inset 0 0 0 3px var(--accent)}
 .tile.is-sold{animation:leave 2.6s ease-in forwards}
-.tile.is-sold::before{content:"Sold";position:absolute;top:18px;right:18px;padding:4px 10px;background:var(--ok);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.tile.is-sold::before{content:"Sold";position:absolute;top:18px;right:18px;z-index:1;padding:4px 10px;background:var(--ok);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
 @keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
 @keyframes arrive{0%{opacity:0}100%{opacity:1}}
 @keyframes leave{0%,70%{opacity:1}100%{opacity:.2}}`;
@@ -172,6 +175,7 @@ function renderV1Family(
       .filter((lot) => lot.category === category.slug)
       .map(
         (lot) => `    <li class="lot" data-lot="${lot.id}" data-category="${category.slug}">
+      <img class="lot-image" src="${model.getImageUrl(lot.title)}" alt="${escapeHtml(lot.title)}" loading="lazy" width="512" height="512">
       <h3 class="lot-title">${escapeHtml(lot.title)}</h3>
       <span class="lot-bid">${escapeHtml(options.getBidLabel(lot))}</span>
       <span class="lot-bids">${getBidsLabel(lot.bidCount)}</span>
@@ -192,7 +196,7 @@ ${lots.join('\n')}
   const hero = model.category
     ? `<section class="hero"><div><h1 class="hero-title">${escapeHtml(model.category.name)}</h1><p class="hero-text">Every open lot in this category, live.</p></div></section>`
     : `<section class="hero">
-  <div><h1 class="hero-title">Live auctions</h1><p class="hero-text">Bids land every few seconds. Lots close on the clock.</p></div>
+  <div><h1 class="hero-title">Live auctions</h1><p class="hero-text">Tools, timber and furniture. Bids land every few seconds, lots close on the clock.</p></div>
   <div class="hero-stats"><div class="stat"><span class="stat-open">${model.open.length}</span><span class="stat-label">lots open</span></div><div class="stat"><span class="stat-value">${CATEGORIES.length}</span><span class="stat-label">categories</span></div></div>
 </section>`;
   return renderPage({
@@ -217,6 +221,7 @@ function renderV2Redesign(model: PageModel): string {
     .filter((lot) => shown.has(lot.category))
     .map(
       (lot) => `  <article class="tile" data-lot="${lot.id}" data-category="${lot.category}" data-bid="${lot.currentBid.toFixed(2)}" data-currency="${lot.currency}" data-ends="${getIsoSeconds(lot.endsAt)}">
+    <img class="lot-image" src="${model.getImageUrl(lot.title)}" alt="${escapeHtml(lot.title)}" loading="lazy" width="512" height="512">
     <h3 class="tile__title">${escapeHtml(lot.title)}</h3>
     <div class="tile__meta"><span class="tile__category">${escapeHtml(names.get(lot.category) ?? lot.category)}</span><span class="tile__bids">${getBidsLabel(lot.bidCount)}</span><span class="tile__ends">${getEndsLabel(lot.endsAt, model.now)}</span></div>
     <p class="tile__body">${escapeHtml(lot.description)}</p>
@@ -288,14 +293,14 @@ export function renderLayout(layout: Layout, model: PageModel): string {
       return renderV4Login();
     case 'v5-injection': {
       // A fixed extra lot carries the injection, so every render fails on the same lot.
-      const category = getShownCategories(model)[0] ?? CATEGORIES[0]!;
+      const category = model.category ?? CATEGORIES.find((candidate) => candidate.slug === 'tables') ?? CATEGORIES[0]!;
       const injected: Lot = {
         id: 'LOT-0000',
         category: category.slug,
-        title: 'Standing Desk for Sitting',
+        title: 'Solid Walnut Writing Desk',
         description: V5_INJECTED_DESCRIPTION,
-        startingBid: 1299,
-        currentBid: 1299,
+        startingBid: 820,
+        currentBid: 820,
         currency: 'USD',
         bidCount: 0,
         status: 'open',

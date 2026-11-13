@@ -17,6 +17,7 @@ function createTestApp(adminSecret: string | undefined = SECRET) {
     adminSecret,
     captcha: createCaptchaOptions(),
     getSnapshot: () => ({ open: [...state.open.values()], sold: [] }),
+    getImageUrl: (title) => `/images/${title.length}.jpg`,
   });
 }
 
@@ -37,8 +38,8 @@ describe('layout switch', () => {
   it('serves the v1 lot list until the layout is switched', async () => {
     const app = createTestApp();
     const v1 = await (await app.request('/')).text();
-    assert.match(v1, /<section class="category" data-category="gadgets">\s*<div class="category-head">\s*<h2 class="category-name">/);
-    assert.match(v1, /<li class="lot" data-lot="LOT-\d{4}" data-category="gadgets">/);
+    assert.match(v1, /<section class="category" data-category="hand-tools">\s*<div class="category-head">\s*<h2 class="category-name">/);
+    assert.match(v1, /<li class="lot" data-lot="LOT-\d{4}" data-category="hand-tools">\s*<img class="lot-image" src="\/images\/\d+\.jpg" alt="[^"]+" loading="lazy"/);
 
     assert.equal((await switchLayout(app, 'v2-redesign')).status, 200);
     const html = await (await app.request('/')).text();

@@ -1,7 +1,7 @@
 # auction-house
 
-Gavel & Glitch Auctions is a fictional live auction house: six categories, about 60 open lots, bids that keep
-rising, lots that sell and new lots that appear. It is the site the self-healing scrapers scrape. A layout
+Gavel & Grain Auctions is a fictional live auction house for woodworking tools, lumber and furniture: six
+categories, about 60 open lots, bids that keep rising, lots that sell and new lots that appear. It is the site the self-healing scrapers scrape. A layout
 switch changes its markup on the fly, so we can break those scrapers on purpose, live, and watch the factory
 heal them.
 
@@ -11,6 +11,11 @@ heal them.
   `categories`, `lots` and the hypertable `bids`, created and seeded on startup when missing. A restart picks
   up where it left off. Without the URL the same auction runs in memory and starts fresh on every restart.
   On plain Postgres (no TimescaleDB), `bids` stays a normal table.
+- **Catalog** (`src/catalog.ts`): a fixed pool of 15 items per category that new lots are drawn from. The
+  table `meta` stores `CATALOG_VERSION`; when the code's version differs on startup, the saved lots and bids
+  are cleared once and a fresh auction is seeded. Raise the version whenever the catalog changes.
+- **Product photos** live in `public/images/<item-slug>.jpg` (512 px), made once with Gemini by
+  `pnpm generate-images`. A lot whose photo is missing shows `placeholder.svg`.
 - **Simulation** (`src/simulation.ts`), every 2 seconds in the same process: lots past their end time sell at
   their current bid, one to three open lots get a bid (raised by the usual auction increments: $1 under $50,
   $5 under $250, $10 under $1,000, then $25), and new lots appear until about 60 are open again. Lots run
@@ -25,8 +30,8 @@ Switched with `POST /admin/layout` or the buttons on `/admin`. Held in memory (d
 
 | Layout | What the page serves |
 |---|---|
-| `v1` | `section.category[data-category] > h2.category-name`, then `ul.lot-list > li.lot[data-lot][data-category]` with `.lot-title`, `.lot-bid` (`$24.00`), `.lot-bids` (`7 bids`), `time.lot-ends[datetime]`, `.lot-description` |
-| `v2-redesign` | `main.auction-grid > article.tile[data-lot][data-category][data-bid][data-currency][data-ends]` with `.tile__title`, `.tile__bids`, `.tile__body` |
+| `v1` | `section.category[data-category] > h2.category-name`, then `ul.lot-list > li.lot[data-lot][data-category]` with `img.lot-image`, `.lot-title`, `.lot-bid` (`$24.00`), `.lot-bids` (`7 bids`), `time.lot-ends[datetime]`, `.lot-description` |
+| `v2-redesign` | `main.auction-grid > article.tile[data-lot][data-category][data-bid][data-currency][data-ends]` with `img.lot-image`, `.tile__title`, `.tile__bids`, `.tile__body` |
 | `v3-currency` | `v1` markup, but some bids read `€24,00`, `1 299 Kč` or `$1,299.00` |
 | `v4-login` | A sign-in wall, "Sign in to bid and see current bids", no lots (HTTP 200) |
 | `v5-injection` | `v1` markup plus lot `LOT-0000`, whose bid is `Reserve not met` and whose description is a prompt injection aimed at a coding agent |
@@ -39,9 +44,10 @@ Both `GET /` and `GET /c/:slug` use the current layout. Every page also has a "r
 ## Routes
 
 - `GET /`: every category with its open lots, ending soonest first, and the recently sold strip.
-- `GET /c/:slug`: one category (`gadgets`, `home-office`, `collectibles`, `wearables`, `music`, `outdoors`).
+- `GET /c/:slug`: one category (`hand-tools`, `power-tools`, `lumber`, `chairs-stools`, `tables`, `cabinets-storage`).
+- `GET /images/:file`: product photos from `public/images`.
 - `GET /ws`: WebSocket. Messages are JSON: `{ "type": "lot", "lot" }` for a new bid,
-  `{ "type": "sold", "lotId", "lot" }` and `{ "type": "new", "lot" }`.
+  `{ "type": "sold", "lotId", "lot" }` and `{ "type": "new", "lot" }`; each `lot` carries its `image` URL.
 - `GET /admin`: one button per layout and the current one. Type the admin secret on the page first.
 - `POST /admin/layout`: header `x-admin-secret: $ADMIN_SECRET`, JSON `{ "layout": "v2-redesign" }`.
 - `POST /captcha/verify`: the gate's form. Checks `g-recaptcha-response` with Google's `siteverify`, sets a
@@ -57,6 +63,7 @@ TIGER_DATABASE_URL=     # Tiger Data service URL (postgres://...); empty keeps t
 RECAPTCHA_SITE_KEY=     # reCAPTCHA v2 checkbox site key; set both keys or neither (Google's test keys, which always pass)
 RECAPTCHA_SECRET_KEY=   # reCAPTCHA v2 secret key, used for siteverify
 COOKIE_SECRET=          # signs the shop_pass cookie; without it a random one is used and passes end on restart
+GEMINI_API_KEY=         # only for pnpm generate-images (GEMINI_ACCESS_KEY works too); the server never reads it
 ```
 
 ## Run locally
@@ -76,6 +83,15 @@ curl -X POST http://localhost:8080/admin/layout -H 'content-type: application/js
 ```
 
 `pnpm check` runs the type check and the tests (no network, no keys, no database).
+
+To make the product photos for items that have none yet (macOS, uses `sips` to shrink them to 512 px):
+
+```bash
+GEMINI_API_KEY=... pnpm generate-images
+```
+
+It uses `gemini-nano-banana-2.1` through the Gemini Interactions API (`GEMINI_IMAGE_MODEL` overrides it), at
+about $0.034 per image. `LIMIT=3` makes only three, to check the look first.
 
 ## Deploy on DigitalOcean App Platform
 
