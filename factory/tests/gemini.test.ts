@@ -17,13 +17,13 @@ beforeEach(() => {
 });
 afterEach(() => mock.restoreAll());
 
-test('asks a Flash model with the event and the logs, and returns its text', async () => {
+test('asks Gemini 4 Hydrogen with the event and the logs, and returns its text', async () => {
     const fetchMock = mock.method(globalThis, 'fetch', async () => answer([{ text: 'The site changed its markup.' }]));
     const text = await explain('# ParseError: no .lot elements found', '19:02 error ParseError');
     assert.equal(text, 'The site changed its markup.');
     const [url, init] = fetchMock.mock.calls[0]!.arguments as [string, RequestInit];
     assert.equal(url, `https://generativelanguage.googleapis.com/v1beta/models/${EXPLAIN_MODEL}:generateContent`);
-    assert.match(EXPLAIN_MODEL, /flash/);
+    assert.equal(EXPLAIN_MODEL, 'gemini-4-hydrogen');
     assert.equal((init.headers as Record<string, string>)['x-goog-api-key'], 'test-key');
     const body = JSON.parse(String(init.body));
     assert.equal(body.systemInstruction.parts[0].text, EXPLAIN_SYSTEM);
