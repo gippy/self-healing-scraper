@@ -34,6 +34,19 @@ function required(name: string): string {
     return value;
 }
 
+// A new issue can show up in the issue list a few seconds before its event (and attachments) can be read:
+// those reads answer 404 until Sentry has stored them. Retry them for up to about half a minute.
+async function sentryFetchNew(path: string, attempts = 4, delayMs = 8_000): Promise<Response> {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            return await sentryFetch(path);
+        } catch (error) {
+            if (attempt >= attempts || !String(error).includes('HTTP 404')) throw error;
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+}
+
 async function sentryFetch(path: string, init: RequestInit = {}): Promise<Response> {
     const response = await fetch(`${SENTRY_API}${path}`, {
         ...init,
@@ -137,7 +150,7 @@ export async function getLatestEvent(issueId: string): Promise<LatestEvent> {
         return fakeLatestEvent(issueId);
     }
     const path = `/organizations/${org()}/issues/${encodeURIComponent(issueId)}/events/latest/`;
-    const response = await sentryFetch(`${path}?llmFormat=markdown`);
+    const response = await sentryFetchNew(`${path}?llmFormat=markdown`);
     const body = await response.text();
     let json: unknown;
     try {
@@ -167,7 +180,12 @@ export async function getEventAttachment(projectSlug: string | undefined, eventI
     if (!eventId) return undefined;
     const project = projectSlug ?? required('SENTRY_PROJECT');
     const base = `/projects/${org()}/${encodeURIComponent(project)}/events/${encodeURIComponent(eventId)}/attachments/`;
-    const list = attachmentListSchema.parse(await (await sentryFetch(base)).json());
+    // Attachments can trail their event by a few seconds: an empty list right after the event is worth a retry.
+    let list = attachmentListSchema.parse(await (await sentryFetchNew(base)).json());
+    for (let attempt = 1; list.length === 0 && attempt < 4; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 8_000));
+        list = attachmentListSchema.parse(await (await sentryFetch(base)).json());
+    }
     const chosen =
         list.find((a) => a.name === 'raw.html' || a.name === 'raw.json') ?? list.find((a) => a.name.startsWith('raw.'));
     if (!chosen) return undefined;
