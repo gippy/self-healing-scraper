@@ -1,13 +1,16 @@
 // The browser script that keeps a page live. It reads `data-live` on <body>:
-// - `v1`: patches `li.lot` cards and the `ol.sold-list` strip;
+// - `v1`: patches `li.lot` cards and the `ol.sold-list` strip; with `data-discount` (black-friday), bids show
+//   the old price struck through and the discounted one;
 // - `v2`: patches `article.tile` cards and the `.ticker`;
 // - anything else: does nothing.
 // Messages from GET /ws: `lot` (a new bid), `sold` and `new`; each lot carries its `image` URL.
 export const LIVE_SCRIPT = `(function(){
-var mode=document.body.dataset.live,onlyCategory=document.body.dataset.category||'',names=JSON.parse(document.body.dataset.categoryNames||'{}');
+var mode=document.body.dataset.live,onlyCategory=document.body.dataset.category||'',discount=Number(document.body.dataset.discount||0),names=JSON.parse(document.body.dataset.categoryNames||'{}');
 if(mode!=='v1'&&mode!=='v2')return;
 var indicator=document.querySelector('.live-indicator'),MAX_SOLD=12;
 function usd(n){return '$'+Number(n).toFixed(2)}
+function setBid(bid,amount){if(!discount){bid.textContent=usd(amount);return}
+bid.innerHTML='<del></del> <ins></ins>';bid.querySelector('del').textContent=usd(amount);bid.querySelector('ins').textContent=usd(Math.round(amount*(100-discount))/100)}
 function bidsLabel(n){return n+(n===1?' bid':' bids')}
 function isoSeconds(iso){return iso.replace(/\\.\\d{3}Z$/,'Z')}
 function endsLabel(iso){var s=Math.round((new Date(iso)-Date.now())/1000);if(s<=0)return 'Closing';
@@ -16,12 +19,12 @@ function find(id){return document.querySelector((mode==='v1'?'li.lot':'article.t
 function pulse(el,cls,ms){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(function(){el.classList.remove(cls)},ms)}
 function setText(el,sel,text){var target=el.querySelector(sel);if(target)target.textContent=text}
 function updateLot(lot){var el=find(lot.id);if(!el)return;
-if(mode==='v1'){var bid=el.querySelector('.lot-bid');if(bid&&bid.textContent.charAt(0)==='$')bid.textContent=usd(lot.currentBid)}
+if(mode==='v1'){var bid=el.querySelector('.lot-bid');if(bid&&bid.textContent.charAt(0)==='$')setBid(bid,lot.currentBid)}
 else{el.dataset.bid=Number(lot.currentBid).toFixed(2)}
 setText(el,mode==='v1'?'.lot-bids':'.tile__bids',bidsLabel(lot.bidCount));pulse(el,'flash',1400)}
 function buildLot(lot){var el;if(mode==='v1'){el=document.createElement('li');el.className='lot';
 el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="lot-title"></h3><span class="lot-bid"></span><span class="lot-bids"></span><time class="lot-ends"></time><p class="lot-description"></p>';
-setText(el,'.lot-title',lot.title);setText(el,'.lot-bid',usd(lot.currentBid));setText(el,'.lot-description',lot.description);
+setText(el,'.lot-title',lot.title);setBid(el.querySelector('.lot-bid'),lot.currentBid);setText(el,'.lot-description',lot.description);
 var time=el.querySelector('time');time.dateTime=isoSeconds(lot.endsAt);time.textContent=endsLabel(lot.endsAt)}
 else{el=document.createElement('article');el.className='tile';el.dataset.bid=Number(lot.currentBid).toFixed(2);el.dataset.currency=lot.currency;el.dataset.ends=isoSeconds(lot.endsAt);
 el.innerHTML='<img class="lot-image" loading="lazy" width="512" height="512"><h3 class="tile__title"></h3><div class="tile__meta"><span class="tile__category"></span><span class="tile__bids"></span><span class="tile__ends"></span></div><p class="tile__body"></p>';

@@ -1,5 +1,5 @@
 // Generates one product photo per catalog item with Gemini's image model and saves it as
-// public/images/<item-slug>.jpg (512 px, JPEG). Existing images are skipped.
+// public/images/<IMAGE_FOLDER>/<item-slug>.jpg (512 px, JPEG). Existing images are skipped.
 //
 // Usage: GEMINI_API_KEY=... node scripts/generate-images.ts
 // - GEMINI_ACCESS_KEY works instead of GEMINI_API_KEY.
@@ -8,14 +8,14 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { getCatalogItems, getItemSlug, type CatalogItem } from '../src/catalog.ts';
+import { getCatalogItems, getItemSlug, IMAGE_FOLDER, type CatalogItem } from '../src/catalog.ts';
 
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 const API_REVISION = '2026-05-20';
 const PRICE_PER_IMAGE_USD = 0.0336;
 const CONCURRENCY = 4;
 const MAX_ATTEMPTS = 3;
-const IMAGES_DIR = fileURLToPath(new URL('../public/images/', import.meta.url));
+const IMAGES_DIR = fileURLToPath(new URL(`../public/images/${IMAGE_FOLDER}/`, import.meta.url));
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_ACCESS_KEY;
 const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-nano-banana-2.1';
@@ -24,9 +24,9 @@ let isStopped = false;
 
 function getPrompt(item: CatalogItem): string {
   return (
-    `Studio product photograph for an online auction listing: ${item.title}. ${item.description} ` +
-    'One object, centered, shown whole, on a seamless neutral light gray background with a soft shadow. ' +
-    'Even, soft daylight. Realistic, sharp, natural wood tones. No text, no logos, no labels, no people, no hands.'
+    `Studio product photograph for an online auction listing of a computer graphics card or accelerator board: ${item.title}. ${item.description} ` +
+    'One piece of hardware, shown whole in a three-quarter view, centered on a seamless dark charcoal background with soft rim light. ' +
+    'Realistic, sharp, clean. No text, no logos, no brand names, no labels, no stickers, no people, no hands.'
   );
 }
 

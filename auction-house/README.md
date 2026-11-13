@@ -1,7 +1,7 @@
 # auction-house
 
-Gavel & Grain Auctions is a fictional live auction house for woodworking tools, lumber and furniture: six
-categories, about 60 open lots, bids that keep rising, lots that sell and new lots that appear. It is the site the self-healing scrapers scrape. A layout
+Silicon & Gavel is a fictional live auction house for graphics cards and AI accelerators: six categories,
+about 60 open lots, bids that keep rising, lots that sell and new lots that appear. Every model name is made up. It is the site the self-healing scrapers scrape. A layout
 switch changes its markup on the fly, so we can break those scrapers on purpose, live, and watch the factory
 heal them.
 
@@ -14,12 +14,13 @@ heal them.
 - **Catalog** (`src/catalog.ts`): a fixed pool of 15 items per category that new lots are drawn from. The
   table `meta` stores `CATALOG_VERSION`; when the code's version differs on startup, the saved lots and bids
   are cleared once and a fresh auction is seeded. Raise the version whenever the catalog changes.
-- **Product photos** live in `public/images/<item-slug>.jpg` (512 px), made once with Gemini by
-  `pnpm generate-images`. A lot whose photo is missing shows `placeholder.svg`.
+- **Product photos** live in `public/images/<IMAGE_FOLDER>/<item-slug>.jpg` (512 px; the folder is `gpu` for
+  the current catalog), made once with Gemini by `pnpm generate-images`. A lot whose photo is missing shows
+  `placeholder.svg`.
 - **Simulation** (`src/simulation.ts`), every 2 seconds in the same process: lots past their end time sell at
   their current bid, one to three open lots get a bid (raised by the usual auction increments: $1 under $50,
   $5 under $250, $10 under $1,000, then $25), and new lots appear until about 60 are open again. Lots run
-  for 4 to 15 minutes.
+  for 4 to 15 minutes. Increments grow with the price, up to $250 for lots above $20,000.
 - **Pages** are rendered on the server with the full current state, so a scraper needs no JavaScript.
   `GET /ws` (WebSocket) then pushes every change, and a small inline script patches the page: bids flash,
   sold lots get stamped and leave, new lots slide in, countdowns tick.
@@ -37,6 +38,7 @@ Switched with `POST /admin/layout` or the buttons on `/admin`. Held in memory (d
 | `v5-injection` | `v1` markup plus lot `LOT-0000`, whose bid is `Reserve not met` and whose description is a prompt injection aimed at a coding agent |
 | `flaky` | `v1` markup, but every other request answers 503 |
 | `captcha` | A reCAPTCHA v2 wall until the visitor solves it, then `v1` for 10 minutes |
+| `black-friday` | `v1` markup plus a sale banner (`div.promo-banner`); every `.lot-bid` holds `<del>$1299.00</del> <ins>$1104.15</ins>`, the bid and the bid 15% off |
 
 Both `GET /` and `GET /c/:slug` use the current layout. Every page also has a "recently sold" strip
 (`ol.sold-list > li.sold-item` in `v1`, `.ticker` in `v2-redesign`), outside the lot lists.
@@ -44,8 +46,8 @@ Both `GET /` and `GET /c/:slug` use the current layout. Every page also has a "r
 ## Routes
 
 - `GET /`: every category with its open lots, ending soonest first, and the recently sold strip.
-- `GET /c/:slug`: one category (`hand-tools`, `power-tools`, `lumber`, `chairs-stools`, `tables`, `cabinets-storage`).
-- `GET /images/:file`: product photos from `public/images`.
+- `GET /c/:slug`: one category (`flagship-gaming`, `datacenter`, `workstation`, `retro`, `mining-survivors`, `low-profile`).
+- `GET /images/...`: product photos from `public/images`.
 - `GET /ws`: WebSocket. Messages are JSON: `{ "type": "lot", "lot" }` for a new bid,
   `{ "type": "sold", "lotId", "lot" }` and `{ "type": "new", "lot" }`; each `lot` carries its `image` URL.
 - `GET /admin`: one button per layout and the current one. Type the admin secret on the page first.
@@ -84,7 +86,8 @@ curl -X POST http://localhost:8080/admin/layout -H 'content-type: application/js
 
 `pnpm check` runs the type check and the tests (no network, no keys, no database).
 
-To make the product photos for items that have none yet (macOS, uses `sips` to shrink them to 512 px):
+To make the product photos for items that have none yet (macOS, uses `sips` to shrink them to 512 px; it
+writes to `public/images/gpu/`):
 
 ```bash
 GEMINI_API_KEY=... pnpm generate-images

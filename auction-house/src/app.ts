@@ -62,8 +62,8 @@ export function createApp(options: {
     return category ? renderLots(c, category) : c.text('No such category', 404);
   });
 
-  app.get('/images/:file', async (c) => {
-    const image = await readImage(c.req.param('file'));
+  app.get('/images/*', async (c) => {
+    const image = await readImage(c.req.path.slice('/images/'.length));
     if (!image) {
       return c.text('Not found', 404);
     }

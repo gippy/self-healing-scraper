@@ -38,8 +38,8 @@ describe('layout switch', () => {
   it('serves the v1 lot list until the layout is switched', async () => {
     const app = createTestApp();
     const v1 = await (await app.request('/')).text();
-    assert.match(v1, /<section class="category" data-category="hand-tools">\s*<div class="category-head">\s*<h2 class="category-name">/);
-    assert.match(v1, /<li class="lot" data-lot="LOT-\d{4}" data-category="hand-tools">\s*<img class="lot-image" src="\/images\/\d+\.jpg" alt="[^"]+" loading="lazy"/);
+    assert.match(v1, /<section class="category" data-category="flagship-gaming">\s*<div class="category-head">\s*<h2 class="category-name">/);
+    assert.match(v1, /<li class="lot" data-lot="LOT-\d{4}" data-category="flagship-gaming">\s*<img class="lot-image" src="\/images\/\d+\.jpg" alt="[^"]+" loading="lazy"/);
 
     assert.equal((await switchLayout(app, 'v2-redesign')).status, 200);
     const html = await (await app.request('/')).text();
@@ -62,6 +62,19 @@ describe('layout switch', () => {
   it('rejects an unknown layout name', async () => {
     const app = createTestApp();
     assert.equal((await switchLayout(app, 'v9-unknown')).status, 400);
+  });
+});
+
+describe('black-friday layout', () => {
+  it('shows each bid struck through next to the price 15% off, inside .lot-bid', async () => {
+    const app = createTestApp();
+    await switchLayout(app, 'black-friday');
+
+    const html = await (await app.request('/')).text();
+    assert.match(html, /class="promo-banner"><strong>Black Friday<\/strong>/);
+    const match = /<span class="lot-bid"><del>\$(\d+\.\d{2})<\/del> <ins>\$(\d+\.\d{2})<\/ins><\/span>/.exec(html);
+    assert.ok(match, 'no discounted bid');
+    assert.equal(Number(match[2]), Math.round(Number(match[1]) * 85) / 100);
   });
 });
 

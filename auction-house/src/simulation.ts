@@ -46,7 +46,9 @@ export function getBidIncrement(amount: number): number {
   if (amount < 50) return 1;
   if (amount < 250) return 5;
   if (amount < 1000) return 10;
-  return 25;
+  if (amount < 5000) return 50;
+  if (amount < 20000) return 100;
+  return 250;
 }
 
 function pick<T>(items: T[], random: Random): T {
