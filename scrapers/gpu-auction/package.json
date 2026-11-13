@@ -1,0 +1,38 @@
+{
+  "name": "selfheal-scraper-template",
+  "version": "0.1.0",
+  "description": "One self-healing scraper: fetches a page through Bright Data, parses it, writes items to Snowflake, reports parser failures to Sentry",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import ./src/instrument.ts src/main.ts",
+    "dev": "node --watch --env-file-if-exists=.env --import ./src/instrument.ts src/main.ts",
+    "type-check": "tsc --noEmit",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "check": "pnpm run type-check && pnpm test"
+  },
+  "engines": {
+    "node": ">=24.11 <25"
+  },
+  "packageManager": "pnpm@12.18.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.8",
+    "@sentry/node": "^11.12.0",
+    "cheerio": "^1.2.0",
+    "hono": "^4.13.18",
+    "snowflake-sdk": "^3.4.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^7.0.2"
+  }
+}
