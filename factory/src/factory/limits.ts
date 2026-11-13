@@ -4,7 +4,7 @@ export type FileChange = { file: string; added: number; removed: number };
 
 export type LimitsReport = { ok: boolean; breaches: string[]; productionLines: number; testFiles: string[] };
 
-export const MAX_PRODUCTION_LINES = 60;
+export const MAX_PRODUCTION_LINES = 120;
 
 const ALLOWED = [/^src\/parsers\//, /^tests\//];
 const FORBIDDEN = [/(^|\/)package\.json$/, /lock\.ya?ml$/, /-lock\.json$/, /^\.github\//, /(^|\/)tsconfig[^/]*\.json$/, /(^|\/)\.env/];

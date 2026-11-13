@@ -22,7 +22,7 @@ test('limits accept a small parser fix with a test', () => {
 test('limits reject protected files, files outside the parsers, big fixes and missing tests', () => {
     assert.match(checkLimits([parserFix, regressionTest, { file: 'package.json', added: 1, removed: 0 }]).breaches.join(), /protected/);
     assert.match(checkLimits([parserFix, regressionTest, { file: 'src/storage.ts', added: 1, removed: 0 }]).breaches.join(), /outside/);
-    assert.match(checkLimits([{ file: 'src/parsers/shop.ts', added: 70, removed: 0 }, regressionTest]).breaches.join(), /limit 60/);
+    assert.match(checkLimits([{ file: 'src/parsers/shop.ts', added: 130, removed: 0 }, regressionTest]).breaches.join(), /limit 120/);
     assert.match(checkLimits([parserFix]).breaches.join(), /no test/);
     assert.match(checkLimits([regressionTest]).breaches.join(), /no production code/);
 });

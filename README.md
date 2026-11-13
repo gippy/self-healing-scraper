@@ -49,7 +49,7 @@ something that isn't that model:
   reviewer has a veto: a missing review or a blocking finding stops the merge whatever Gemini says.
 - **Agents see only the scraper.** Each agent works in a sparse checkout of just its scraper's folder, so it
   learns the site from the pages it fetched, never from the site's source code in the same monorepo.
-- **Limits in code.** A heal may only touch `src/parsers/` and `tests/`, at most 60 lines of production
+- **Limits in code.** A heal may only touch `src/parsers/` and `tests/`, at most 120 lines of production
   code, no dependencies or config. The agents' tools are fenced by a permission callback: writes only under
   allowed paths, a short list of exact commands, no shell chaining, no network. Model-written code runs
   with an environment holding no secrets.
