@@ -264,7 +264,7 @@ async function fixIssue(input: FactoryInput, emit: Emit, deps: FactoryDeps): Pro
     const answers: GateAnswers | undefined = config.geminiApiKey
         ? await deps.askGate(config.geminiApiKey, getGateState(input, diff, testSource, lastReview))
         : undefined;
-    const decision = decide(answers, limits, true);
+    const decision = decide(answers, limits, true, lastReview);
     step('gate', 'done', decision.merge ? 'Gemini: safe to merge' : `A human should look: ${decision.reasons.join('; ')}`, {
         answers,
         decision,

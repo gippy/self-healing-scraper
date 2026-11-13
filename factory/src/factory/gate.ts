@@ -109,8 +109,17 @@ export function getGateAnswers(answers: Record<string, DecisionAnswer>): GateAns
     };
 }
 
-export function decide(answers: GateAnswers | undefined, limits: LimitsReport, checksPassed: boolean): GateDecision {
+// The adversarial review is a veto: a missing review or one with blocking findings stops the merge, whatever
+// Gemini answers.
+export function decide(
+    answers: GateAnswers | undefined,
+    limits: LimitsReport,
+    checksPassed: boolean,
+    review: Review | undefined,
+): GateDecision {
     const reasons: string[] = [];
+    if (!review) reasons.push('the adversarial review did not finish');
+    else if (review.blocking.length > 0) reasons.push(`the reviewer still blocks it (${review.blocking.length} finding(s))`);
     if (!checksPassed) reasons.push('pnpm check does not pass');
     if (!limits.ok) reasons.push(...limits.breaches);
     if (!answers) reasons.push('Gemini did not answer');

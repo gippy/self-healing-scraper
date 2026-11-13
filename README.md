@@ -2,8 +2,13 @@
 
 Give it a URL and it **builds a web scraper**, checks it against the live site, and deploys it. When the site
 changes and the scraper breaks, a **monitor** notices in Sentry, pauses the scraper, and the factory **heals**
-it: a failing test from the exact page that broke it, a fix, an adversarial review, a calibrated go/no-go,
-and a redeploy. No human in the loop unless a gate says one is needed.
+it: a failing test from the exact page that broke it, a fix, an adversarial review, a go/no-go decision on
+probability thresholds, and a redeploy. A human steps in only when a check or the reviewer stops it.
+
+**Demonstrated live (2026-11-13):** URL → generated scraper → merged PR → its own DigitalOcean app → rows in
+Snowflake. After the site switched to a redesigned layout, the factory reproduced the failure from the exact
+page, repaired and reviewed the parser, redeployed it, resumed scraping and resolved the Sentry issue. An
+earlier repair that bent the parser toward wrong data was stopped by the reviewer and never shipped.
 
 Built at the AIE x MLH Hackathon @ Code Summit (2026-11-13).
 
@@ -38,8 +43,11 @@ something that isn't that model:
   is told to break the fix: swallowed errors, `?.` that turns a crash into wrong data, weak tests, old layouts.
 - **Verified on the live site.** Create mode fetches the site again, runs the new parser, checks the output
   in code (items, unique ids, titles, prices) and has the second model read the page and compare.
-- **Calibrated gates.** **Gemini Decision 1** answers typed questions with probabilities (risk, fixes the
-  root cause, review clear; correct, complete, fails loudly). Code turns them into ship or don't.
+- **Probability thresholds enforced in code.** **Gemini Decision 1** answers typed questions with probabilities (risk, fixes the
+  root cause, review clear; correct, complete, fails loudly). Code turns them into ship or don't, and the
+  reviewer has a veto: a missing review or a blocking finding stops the merge whatever Gemini says.
+- **Agents see only the scraper.** Each agent works in a sparse checkout of just its scraper's folder, so it
+  learns the site from the pages it fetched, never from the site's source code in the same monorepo.
 - **Limits in code.** A heal may only touch `src/parsers/` and `tests/`, at most 60 lines of production
   code, no dependencies or config. The agents' tools are fenced by a permission callback: writes only under
   allowed paths, a short list of exact commands, no shell chaining, no network. Model-written code runs
@@ -50,7 +58,8 @@ something that isn't that model:
 
 ## Built with
 
-DigitalOcean (App Platform, Serverless Inference, Managed Agents spike) · Gemini (Decision 1, Flash) ·
+DigitalOcean (App Platform, Serverless Inference; Managed Agents as an optional agent runtime, proven live,
+while the demonstrated heal ran on Serverless Inference) · Gemini (Decision 1, Flash, image generation) ·
 Sentry · Bright Data · Tiger Data · Snowflake · Apify prompt guard · Claude Agent SDK as the agent harness.
 
 ## Run it

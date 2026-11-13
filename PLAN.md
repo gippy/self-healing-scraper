@@ -1,5 +1,7 @@
 # Sentry triage agent + fix factory — plan
 
+
+> **Historical.** This is how the plan evolved during the day. `README.md` describes what was built and demonstrated; `DESIGN.md` was the build contract.
 Drafted 2026-11-13 10:45 PST for the AIE x MLH hackathon (submissions close 15:00 PST). Builds on
 github.com/apify/actor-logs-monitor-agent (private). Prize categories it targets are listed at the end.
 

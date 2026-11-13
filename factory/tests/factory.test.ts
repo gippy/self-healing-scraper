@@ -54,15 +54,24 @@ test('the tool guard keeps writes and commands inside the policy', async () => {
     assert.equal((await ask('WebFetch', { url: 'https://example.com' })).behavior, 'deny');
 });
 
-test('the gate merges only when every probability, the limits and the checks agree', () => {
+test('the gate merges only when every probability, the limits, the checks and the review agree', () => {
     const limits = checkLimits([parserFix, regressionTest]);
     const sure = { lowRisk: 0.9, rootCause: 0.92, reviewClear: 0.85 };
-    assert.deepEqual(decide(sure, limits, true), { merge: true, reasons: [] });
-    assert.equal(decide({ ...sure, rootCause: 0.6 }, limits, true).merge, false);
-    assert.equal(decide({ ...sure, lowRisk: 0.5 }, limits, true).merge, false);
-    assert.equal(decide(sure, limits, false).merge, false);
-    assert.equal(decide(undefined, limits, true).merge, false);
-    assert.equal(decide(sure, checkLimits([parserFix]), true).merge, false);
+    const clear = { verdict: 'approve' as const, blocking: [], notes: [] };
+    assert.deepEqual(decide(sure, limits, true, clear), { merge: true, reasons: [] });
+    assert.equal(decide({ ...sure, rootCause: 0.6 }, limits, true, clear).merge, false);
+    assert.equal(decide({ ...sure, lowRisk: 0.5 }, limits, true, clear).merge, false);
+    assert.equal(decide(sure, limits, false, clear).merge, false);
+    assert.equal(decide(undefined, limits, true, clear).merge, false);
+    assert.equal(decide(sure, checkLimits([parserFix]), true, clear).merge, false);
+});
+
+test('the adversarial review is a veto Gemini cannot override', () => {
+    const limits = checkLimits([parserFix, regressionTest]);
+    const sure = { lowRisk: 0.99, rootCause: 0.99, reviewClear: 0.99 };
+    const blocked = { verdict: 'request_changes' as const, blocking: [{ finding: 'hides errors', evidence: 'returns []' }], notes: [] };
+    assert.equal(decide(sure, limits, true, undefined).merge, false);
+    assert.match(decide(sure, limits, true, blocked).reasons.join(), /reviewer still blocks/);
 });
 
 test("Gemini's gate answers are read from the Decisions API's answer shape", () => {
