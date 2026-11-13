@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+work/
+*.log
+.DS_Store
+*.p8
+*.pem
+# Personal notes for the hackathon (account emails, promo details); never in the public repo.
+HACKATHON_INFO.md

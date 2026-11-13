@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Current lots | Gavel &amp; Glitch Auctions</title>
+<script>(function(){var t;try{t=localStorage.getItem('theme')}catch(e){}
+if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+document.documentElement.dataset.theme=t})();</script>
+<style>
+:root{--bg:#faf7f2;--surface:#ffffff;--text:#1f1d1a;--muted:#6b645b;--line:#e6dfd4;--accent:#c2410c;--ok:#15803d;--bad:#b91c1c}
+:root[data-theme=dark]{--bg:#16140f;--surface:#211e18;--text:#f2ede4;--muted:#a69d90;--line:#3a352c;--accent:#fb923c;--ok:#4ade80;--bad:#f87171}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit}
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line)}
+.brand{font-weight:700;text-decoration:none;letter-spacing:.02em}
+.brand::before{content:"*";color:var(--accent);margin-right:6px}
+.theme-switch{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer}
+.page{max-width:1080px;margin:0 auto;padding:24px}
+.site-footer{max-width:1080px;margin:0 auto;padding:24px;color:var(--muted);font-size:14px}
+.page-title{margin:0 0 20px;font-size:28px}
+.lot-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.lot{display:flex;flex-direction:column;gap:6px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.lot-title{margin:0;font-size:18px}
+.lot-bid{font-size:20px;font-weight:700;color:var(--accent)}
+.lot-bids,.lot-ends{font-size:14px;color:var(--muted)}
+.lot-description{margin:0;color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/">Gavel &amp; Glitch Auctions</a>
+  <button class="theme-switch" type="button">Theme</button>
+</header>
+<main class="page">
+<h1 class="page-title">Current lots</h1>
+<ul class="lot-list">
+  <li class="lot" data-lot="LOT-001">
+    <h2 class="lot-title">Vintage Rubber Duck Debugger</h2>
+    <span class="lot-bid">$33.50</span>
+    <span class="lot-bids">9 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T21:33:00Z">Ends in 2h 18m</time>
+    <p class="lot-description">A patient yellow listener from an early dot-com office. Light coffee stains, squeak intact.</p>
+  </li>
+  <li class="lot" data-lot="LOT-002">
+    <h2 class="lot-title">Signed Off-by-One Socks</h2>
+    <span class="lot-bid">$23.50</span>
+    <span class="lot-bids">16 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:12:00Z">Ends in 57m</time>
+    <p class="lot-description">Three socks per pair, so the loop always finishes. Signed on the third sock.</p>
+  </li>
+  <li class="lot" data-lot="LOT-003">
+    <h2 class="lot-title">Original Merge Conflict Mug</h2>
+    <span class="lot-bid">$21.00</span>
+    <span class="lot-bids">2 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:54:00Z">Ends in 1h 39m</time>
+    <p class="lot-description">Holds 350 ml. Keeps both your coffee and theirs warm. First production run.</p>
+  </li>
+  <li class="lot" data-lot="LOT-004">
+    <h2 class="lot-title">Hand-Knitted Infinite Loop Scarf</h2>
+    <span class="lot-bid">$129.50</span>
+    <span class="lot-bids">23 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T19:57:00Z">Ends in 42m</time>
+    <p class="lot-description">Knitted in one continuous round. There is no end, only more scarf.</p>
+  </li>
+  <li class="lot" data-lot="LOT-005">
+    <h2 class="lot-title">Semicolon Desk Lamp, 1998 Edition</h2>
+    <span class="lot-bid">$64.00</span>
+    <span class="lot-bids">0 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T21:18:00Z">Ends in 2h 3m</time>
+    <p class="lot-description">A warm light shaped like the character you forgot on line 42. Original cable.</p>
+  </li>
+  <li class="lot" data-lot="LOT-006">
+    <h2 class="lot-title">Tabs and Spaces Keycap Set</h2>
+    <span class="lot-bid">$41.50</span>
+    <span class="lot-bids">8 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:03:00Z">Ends in 48m</time>
+    <p class="lot-description">Two space bars and a tab key, so nobody has to lose the argument.</p>
+  </li>
+  <li class="lot" data-lot="LOT-007">
+    <h2 class="lot-title">Plant Not Found Pot</h2>
+    <span class="lot-bid">$28.50</span>
+    <span class="lot-bids">6 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T21:45:00Z">Ends in 2h 30m</time>
+    <p class="lot-description">A ceramic pot printed with a friendly 404. Plant not included, by definition.</p>
+  </li>
+  <li class="lot" data-lot="LOT-008">
+    <h2 class="lot-title">Coffee to Code Compiler</h2>
+    <span class="lot-bid">$67.00</span>
+    <span class="lot-bids">8 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:06:00Z">Ends in 51m</time>
+    <p class="lot-description">A one-liter French press. Input: beans and hot water. Output: features.</p>
+  </li>
+  <li class="lot" data-lot="LOT-009">
+    <h2 class="lot-title">Legacy Code Hard Hat</h2>
+    <span class="lot-bid">$70.50</span>
+    <span class="lot-bids">27 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T19:30:00Z">Ends in 15m</time>
+    <p class="lot-description">Protective headwear for refactoring files older than the intern.</p>
+  </li>
+  <li class="lot" data-lot="LOT-010">
+    <h2 class="lot-title">Standing Desk for Sitting</h2>
+    <span class="lot-bid">$1830.50</span>
+    <span class="lot-bids">8 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:45:00Z">Ends in 1h 30m</time>
+    <p class="lot-description">Motorized, quiet and solid oak. It goes up, but mostly it stays down.</p>
+  </li>
+  <li class="lot" data-lot="LOT-011">
+    <h2 class="lot-title">Cache Invalidation Notebook</h2>
+    <span class="lot-bid">$18.00</span>
+    <span class="lot-bids">16 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T19:45:00Z">Ends in 30m</time>
+    <p class="lot-description">Ninety-six dotted pages, each one a little out of date.</p>
+  </li>
+  <li class="lot" data-lot="LOT-012">
+    <h2 class="lot-title">Standup Timer Hourglass</h2>
+    <span class="lot-bid">$24.00</span>
+    <span class="lot-bids">8 bids</span>
+    <time class="lot-ends" datetime="2026-11-13T20:48:00Z">Ends in 1h 33m</time>
+    <p class="lot-description">Runs for exactly two minutes, which is how long a standup should take.</p>
+  </li>
+</ul>
+</main>
+<footer class="site-footer">Gavel &amp; Glitch Auctions is a fictional auction house for a scraping demo. Nothing here is for sale.</footer>
+<script>(function(){var root=document.documentElement,button=document.querySelector('.theme-switch');
+function setLabel(){button.textContent=root.dataset.theme==='dark'?'Light mode':'Dark mode'}
+setLabel();button.addEventListener('click',function(){var next=root.dataset.theme==='dark'?'light':'dark';
+root.dataset.theme=next;try{localStorage.setItem('theme',next)}catch(e){}setLabel()})})();</script>
+</body>
+</html>

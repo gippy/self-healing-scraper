@@ -1,0 +1,64 @@
+{
+  "action": "created",
+  "installation": {
+    "uuid": "7a3f6e2c-1b9d-4c8e-a5f0-2d6b8e4c1a90"
+  },
+  "data": {
+    "issue": {
+      "url": "https://sentry.io/api/0/organizations/selfheal/issues/4517290001/",
+      "web_url": "https://selfheal.sentry.io/issues/4517290001/",
+      "project_url": "https://selfheal.sentry.io/issues/?project=4510000000000001",
+      "id": "4517290001",
+      "shareId": null,
+      "shortId": "SELFHEAL-FEED-1",
+      "title": "ParseError: no .lot elements found",
+      "culprit": "parse(src/parsers/index)",
+      "permalink": "https://selfheal.sentry.io/issues/4517290001/",
+      "logger": null,
+      "level": "error",
+      "status": "unresolved",
+      "statusDetails": {},
+      "substatus": "new",
+      "isPublic": false,
+      "platform": "node",
+      "project": {
+        "id": "4510000000000001",
+        "name": "scrapers",
+        "slug": "scrapers",
+        "platform": "node"
+      },
+      "type": "error",
+      "metadata": {
+        "type": "ParseError",
+        "value": "no .lot elements found",
+        "filename": "src/parsers/index.ts",
+        "function": "parse",
+        "in_app_frame_mix": "mixed",
+        "initial_priority": 75
+      },
+      "numComments": 0,
+      "assignedTo": null,
+      "isBookmarked": false,
+      "isSubscribed": false,
+      "subscriptionDetails": null,
+      "hasSeen": false,
+      "annotations": [],
+      "issueType": "error",
+      "issueCategory": "error",
+      "priority": "high",
+      "priorityLockedAt": null,
+      "seerFixabilityScore": null,
+      "seerAutofixLastTriggered": null,
+      "isUnhandled": false,
+      "count": "1",
+      "userCount": 0,
+      "firstSeen": "2026-11-13T19:02:11.000000+00:00",
+      "lastSeen": "2026-11-13T19:02:11.000000+00:00"
+    }
+  },
+  "actor": {
+    "type": "application",
+    "id": "sentry",
+    "name": "Sentry"
+  }
+}
