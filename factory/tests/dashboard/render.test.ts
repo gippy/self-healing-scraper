@@ -39,7 +39,7 @@ test('shows the triage as bars and the route', () => {
     // A started and a done of the same stage share one row.
     assert.equal(html.match(/class="row /g)?.length, 3);
     // Each stage that ran is a clickable node with a detail pane; the factory lane waits.
-    assert.match(html, /<li class="node s-done"><button type="button" class="n-box" data-node="triage">/);
+    assert.match(html, /<li class="node s-done"><button type="button" class="n-box" data-node="triage"/);
     assert.match(html, /data-pane="triage" hidden/);
     assert.match(html, /<li class="node s-pending"><div class="n-box">.*Failing test/);
 });
@@ -78,12 +78,12 @@ test('the card header shows the paused scraper until the factory resumes it', ()
     ];
     const html = renderCard(paused);
     assert.match(html, /⏸ Scraper shop paused/);
-    assert.match(html, /<li class="node s-paused"><button type="button" class="n-box" data-node="source_paused">.*Pause shop/);
-    assert.match(html, /<li class="node s-pending"><div class="n-box">.*Resume shop/);
+    assert.match(html, /<li class="node s-paused"><button type="button" class="n-box" data-node="source_paused".*Pause scraper/);
+    assert.match(html, /<li class="node s-pending"><div class="n-box">.*Resume scraper/);
 
     const resumed = renderCard([...paused, ev('deployed', 'done', 'd'), ev('source_resumed', 'done', 'Scraper shop resumed')]);
     assert.match(resumed, /▶ Scraper shop resumed/);
-    assert.ok(!resumed.includes('⏸'));
+    assert.ok(!resumed.includes('⏸ Scraper'));
 
     const failed = renderCard([ev('received', 'done', 'x'), ev('source_paused', 'failed', 'Could not pause', { source: 'serp', error: 'HTTP 401' })]);
     assert.match(failed, /Scraper serp not paused/);
@@ -117,7 +117,7 @@ test('the page has the SSE client and the empty state', () => {
     const html = renderPage({ cards: [], fake: true });
     assert.match(html, /new EventSource\('\/events'\)/);
     assert.match(html, /Waiting for work/);
-    assert.match(html, /<aside class="panel">/);
+    assert.match(html, /id="scrapers" class="strip"/);
     assert.match(html, /FAKE_EXTERNALS=1/);
 });
 
@@ -137,7 +137,7 @@ test('a create run shows the create stages, the scraper name and "Scraper live" 
     ]);
     assert.match(running, /New scraper/);
     assert.match(running, /class="scraper-name">auction-house/);
-    assert.match(running, /<li class="node s-active"><button type="button" class="n-box" data-node="generate">.*Parser \+ tests/);
+    assert.match(running, /<li class="node s-active"><button type="button" class="n-box" data-node="generate".*Parser \+ tests/);
     assert.match(running, /<li class="node s-pending"><div class="n-box">.*Verify live/);
     // The running step's progress lines stream in the live log under the diagram.
     assert.match(running, /class="tail">.*Parser \+ tests · live.*Agent: reading the fixture/s);
@@ -155,7 +155,7 @@ test('a create run shows the create stages, the scraper name and "Scraper live" 
     assert.match(live, /data-outcome="registered"/);
     assert.match(live, /Scraper live/);
     // The deploy step never reported done, but later steps followed it.
-    assert.match(live, /<li class="node s-done"><button type="button" class="n-box" data-node="deploy">.*Deploy/);
+    assert.match(live, /<li class="node s-done"><button type="button" class="n-box" data-node="deploy".*Deploy/);
 });
 
 test('Gemini\'s reading is shown on the card, escaped', () => {
@@ -176,11 +176,11 @@ test('the scrapers panel shows running, paused and unreachable scrapers', () => 
         ],
         new Map([['serp', { paused: true, issue: 'SCRAPERS-7', at: '2026-11-13T20:00:00Z' }]]),
     );
-    assert.match(html, /class="scraper s-running">.*Running.*auction-house.*58 items/s);
-    assert.match(html, /class="scraper s-paused">.*Paused.*breaker open.*serp.*paused for SCRAPERS-7/s);
-    assert.match(html, /class="scraper s-down">.*broken.*no answer in 4 s/s);
+    assert.match(html, /class="scraper s-running" title="58 items"><span class="sc-name">auction-house<\/span><b class="sc-state"><span class="sc-light"><\/span>running/);
+    assert.match(html, /class="scraper s-paused" title="paused for SCRAPERS-7"><span class="sc-name">serp<\/span>.*paused/);
+    assert.match(html, /class="scraper s-down" title="no answer in 4 s"><span class="sc-name">broken/);
     const healing = renderScrapers([{ name: 'serp', url: 'https://s.example', up: true }], new Map([['serp', { paused: true, healing: true, issue: 'SCRAPERS-7', at: '2026-11-13T20:00:00Z' }]]));
-    assert.match(healing, /class="scraper s-healing">.*Healing/s);
+    assert.match(healing, /class="scraper s-healing".*healing<\/b>/s);
     assert.match(renderScrapers([]), /No scrapers yet/);
 });
 
@@ -194,9 +194,29 @@ test('a stop is drawn as a branch off the node where the run stopped, and the la
         ev('routed', 'done', 'human', { route: 'needs_human' }),
         ev('needs_human', 'done', 'The prompt guard flagged the evidence', { costUsd: 0.42 }),
     ]);
-    assert.match(html, /<li class="branch b-human" style="grid-column:4 \/ -1;--at:[\d.]+%"><button type="button" class="b-box" data-node="stop">.*Needs a human.*The prompt guard flagged/);
-    assert.match(html, /class="node s-warn"><button type="button" class="n-box" data-node="guard">/);
+    assert.match(html, /<li class="branch b-human" style="grid-column:5 \/ -1;--at:[\d.]+%"><button type="button" class="b-box" data-node="stop">↳ Needs a human/);
+    // The one line under the pipeline says why it stopped.
+    assert.match(html, /class="now-text">Needs a human: The prompt guard flagged the evidence/);
+    assert.match(html, /class="node s-warn"><button type="button" class="n-box" data-node="guard"/);
     assert.match(html, /class="node s-skipped"><div class="n-box">.*Worktree/);
     assert.match(html, /data-sel="stop"/);
     assert.match(html, /class="cost">\$0\.42/);
+});
+
+test('the line under the pipeline: Gemini numbers as bars, the pause in words, the PR link once merged', () => {
+    const triage = renderCard([
+        ev('received', 'done', 'x'),
+        ev('triage', 'done', 'Gemini Decision 1: critical', { severity: { benign: 0.0, minor: 0.01, critical: 0.99 }, fixable: 0.97 }),
+    ]);
+    assert.match(triage, /class="now-text">Gemini: critical 99%, fixable 97%<\/p><div class="now-visual"><div class="bars">/);
+    const paused = renderCard([ev('received', 'done', 'x'), { ...ev('source_paused', 'done', 'paused', { scraper: 'shop' }), scraper: 'shop' }]);
+    assert.match(paused, /class="now-text">Scraper shop paused: no bad data reaches Snowflake/);
+    const merged = renderCard([
+        ev('received', 'done', 'x'),
+        ev('pr_opened', 'done', 'PR opened', { prUrl: 'https://github.com/gippy/self-healing-scraper/pull/3' }),
+        ev('merged', 'done', 'Merged after the gate'),
+    ]);
+    assert.match(merged, /class="now-text">Merged after the gate<\/p><div class="now-visual"><a class="link-btn" href="https:\/\/github\.com\/gippy\/self-healing-scraper\/pull\/3"/);
+    // Details stay behind the toggle.
+    assert.match(merged, /<details class="extra" data-k="more"><summary>details<\/summary>/);
 });
