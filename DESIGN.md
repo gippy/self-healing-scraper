@@ -106,7 +106,7 @@ As built, with these changes:
   (p of yes, 0.01–0.99) + `confidence`; `choice` + `probabilities` + `confidence`; `score` + `probabilities`
   + `legend` + `confidence`. Two attempts, 15 s timeout, `undefined` when it can't answer. Replaces Jev
   (`src/jev.ts` goes); the factory's gate imports `askDecisions` too.
-- **Gemini inference:** `src/gemini.ts` `explain(eventMarkdown, recentLogs)`: a Gemini Flash model (check
+- **Gemini inference:** `src/gemini.ts` `explain(eventMarkdown, recentLogs)`: Gemini 4 Hydrogen (`gemini-4-hydrogen`; check
   the current model ids in the docs) writes a short plain-language reading of what broke, shown on the dashboard
   and passed to the decision questions as part of `input`.
 - **Scraper lookup:** the Sentry `scraper` tag names the scraper; `getScraper(name)` from `src/registry.ts`
@@ -148,7 +148,7 @@ example as a patch) so the factory's own checks, limits and tests run unchanged.
 DigitalOcean Serverless Inference (`DO_MODEL_ACCESS_KEY`, Anthropic Messages endpoint
 `https://inference.do-ai.run`): Claude and GPT get 403 on Jarda's account tier, so the agents use open-weight
 models from two labs: fixer `kimi-k3.1-pro`, reviewer `glm-5.3`, side tasks `minimax-m3.1-flash`.
-Decisions: `gemini-decision-1`. Log reading: a Gemini Flash model.
+Decisions: `gemini-decision-1`. Log reading: Gemini 4 Hydrogen.
 
 ## Environment variables
 

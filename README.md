@@ -60,7 +60,7 @@ something that isn't that model:
 ## Built with
 
 DigitalOcean (App Platform, Serverless Inference; Managed Agents as an optional agent runtime, proven live,
-while the demonstrated heal ran on Serverless Inference) · Gemini (Decision 1, Flash, image generation) ·
+while the demonstrated heal ran on Serverless Inference) · Gemini (Decision 1, Gemini 4 Hydrogen, image generation) ·
 Sentry · Bright Data · Tiger Data · Snowflake · Apify prompt guard · Claude Agent SDK as the agent harness.
 
 ## Run it

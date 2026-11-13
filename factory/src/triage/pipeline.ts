@@ -181,7 +181,7 @@ export async function runPipeline(start: IssueInfo | { id: string }, origin: Ori
         return;
     }
 
-    // Triage: Gemini Flash reads the evidence, Gemini Decision 1 judges it (with Gemini's reading in its input).
+    // Triage: Gemini 4 Hydrogen reads the evidence, Gemini Decision 1 judges it (with Gemini's reading in its input).
     emit('triage', 'started', 'Gemini is reading the event and the logs…');
     const explainStarted = Date.now();
     const explanation = await deps.explain(markdown, logs).catch(() => undefined);

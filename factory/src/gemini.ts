@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 import { fakeExplanation, fakeLatency } from './triage/fakes.ts';
 
-// Gemini Flash reads a failing scraper's Sentry event and recent logs and says, in plain language, what broke.
+// Gemini 4 Hydrogen reads a failing scraper's Sentry event and recent logs and says, in plain language, what broke.
 // The text it reads has already passed the prompt guard; its answer goes on the dashboard and into the
 // Decisions input. REST: https://aistudio.google.com/api-reference/generate-content/generate-content
 
 export const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta';
 // Newest stable Flash (November 2026). Its lowest thinking level is LOW.
-export const EXPLAIN_MODEL = 'gemini-3.8-flash';
+export const EXPLAIN_MODEL = 'gemini-4-hydrogen';
 
 const EVENT_CHARS = 12_000;
 const LOG_CHARS = 6_000;
